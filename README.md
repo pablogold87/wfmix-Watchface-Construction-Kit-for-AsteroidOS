@@ -1,4 +1,4 @@
-# wfmix – Watchface Construction Kit for AsteroidOS (Qt5)
+# wfmix – Watchface Construction Kit for AsteroidOS (Qt5 + Qt6)
 
 🇩🇪 [Deutsche Anleitung: LIESMICH.md](LIESMICH.md)
 
@@ -7,55 +7,75 @@ watchface in [AsteroidOS/unofficial-watchfaces](https://github.com/AsteroidOS/un
 into a new watchface. You can delete parts, edit the code of individual blocks, test the result
 on your PC and deploy it to the watch via SSH – all from a small web UI in your browser.
 
-Intended for **AsteroidOS ≤ 2.1 (Qt 5.15)**, i.e. repository state `2c605dc` of unofficial-watchfaces.
-(The current `master` of unofficial-watchfaces targets Qt6 / AsteroidOS 2.2.)
+- Works with **both** repository states: Qt5 (AsteroidOS ≤ 2.1, commit `2c605dc`) and Qt6 (AsteroidOS ≥ 2.2, `master`)
+- Generates watchfaces for **Qt5 or Qt6**, whichever state is checked out – e.g. use the newest watchfaces on a Qt5 watch
+- User interface in **German and English** (switch at the top right)
+- Only Python 3 standard library, no extra packages
 
 ![wfmix user interface](docs/screenshot-ui.png)
 
-| Test window on the PC | Example result |
+| Test window (Qt6 watchface converted to Qt5) | Example result |
 |---|---|
 | ![Test window](docs/screenshot-test.png) | ![Example watchface](docs/example-watchface.png) |
 
+## Which Qt version does my watch use?
+
+| AsteroidOS | Qt | Target in wfmix |
+|---|---|---|
+| 1.x, 2.0, 2.1 | Qt 5.15 | **Qt5** |
+| 2.2 and newer | Qt 6 | **Qt6** |
+
+Not sure? Click **Check connection** in wfmix (or run `ssh root@192.168.2.15 "ls /usr/lib | grep -E 'libQt[56]Core'"`).
+wfmix then selects the matching target automatically.
+
 ## Requirements
 
-- Linux with Python 3.8 or newer (standard library only, no extra packages)
-- For testing on the PC: Qt5 `qmlscene` and QML modules (Ubuntu/Debian):
-  ```
-  sudo apt install qmlscene qml-module-qtquick2 qml-module-qtquick-controls2 qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qt-labs-settings qml-module-qtquick-dialogs qml-module-qtquick-shapes qml-module-qtquick-window2
-  ```
+- Linux with Python 3.8 or newer
+- `git` and a **git clone** of unofficial-watchfaces (needed to test the other Qt version on the PC)
+- For testing on the PC (Ubuntu/Debian) – install the packages for the target(s) you use:
+  - Qt5:
+    ```
+    sudo apt install qmlscene qml-module-qtquick2 qml-module-qtquick-controls2 qml-module-qtquick-layouts qml-module-qtgraphicaleffects qml-module-qt-labs-settings qml-module-qtquick-dialogs qml-module-qtquick-shapes qml-module-qtquick-window2
+    ```
+  - Qt6:
+    ```
+    sudo apt install qml-qt6 qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qt5compat-graphicaleffects qml6-module-qtquick-shapes qml6-module-qtquick-window qml6-module-qtcore qml6-module-qtquick-templates qml6-module-qtqml-workerscript qml6-module-qt-labs-settings qml6-module-qtquick-dialogs libqt6svg6 qt6-image-formats-plugins
+    ```
 - For deploying: an AsteroidOS watch in Developer mode (Settings → USB), reachable via `ssh root@192.168.2.15` without password prompt
+
+The header of wfmix shows whether testing with Qt5 / Qt6 is available (✓ / ✗).
 
 ## Installation
 
 ```
 git clone https://github.com/AsteroidOS/unofficial-watchfaces
 cd unofficial-watchfaces
-git checkout 2c605dc
 git clone https://github.com/<your-username>/wfmix
 python3 wfmix/wfmix.py
 ```
 
-wfmix must live inside the `unofficial-watchfaces` folder (`unofficial-watchfaces/wfmix/wfmix.py`).
-Alternatively, point it to the repo with `--repo /path/to/unofficial-watchfaces`.
+This uses the newest watchfaces (Qt6 state). If you prefer the Qt5 state of the repository, run
+`git checkout 2c605dc` inside `unofficial-watchfaces` first – wfmix works with both.
 
+wfmix must live inside the `unofficial-watchfaces` folder (`unofficial-watchfaces/wfmix/wfmix.py`),
+or point it to the repo with `--repo /path/to/unofficial-watchfaces`.
 Your browser opens http://127.0.0.1:8777. When starting from inside the `wfmix` folder, use `python3 wfmix.py`.
 
 ## Usage
 
-The user interface is in German; the English meaning of each label is given in parentheses.
-
-- **Left:** pick a watchface (search, filter *Analog* / *Digital* / *Eigene* = your own)
-- **Middle:** the building blocks (*Bausteine*) of that watchface
-  - Click = view code, **＋** = add to your watchface
-  - *Alle übernehmen* (add all) = take over a complete watchface so you can delete parts afterwards
-  - Tags: *braucht* (needs) = added automatically · *nutzt* (uses) = root properties that come along automatically · *Helfer* (helper) = draws nothing, only controls other blocks
-- **Right:** your watchface (*Mein Watchface*)
+- **Left:** pick a watchface (search, filter *Analog* / *Digital* / *Own*)
+- **Middle:** the building blocks of that watchface
+  - Click = view code, **＋** = add to your watchface, **✓** = already added (click again to remove)
+  - *Add all* = take over a complete watchface so you can delete parts afterwards
+  - Tags: *needs* = added automatically · *uses* = root properties that come along automatically · *Helper* = draws nothing, only controls other blocks · *Qt5/Qt6 only* = effect that only exists in one Qt version
+- **Right:** your watchface
   - ✕ deletes, ↑ ↓ or drag & drop reorders (further down = drawn on top)
-  - Click an entry to edit its code (*Übernehmen* or Ctrl+S to apply)
-  - *Basis* (base) provides the root settings and the preview image
-- **▶ Am PC testen** (test on PC): builds the watchface and opens the test window with round/square, ambient mode, 12h, fixed time, etc. Click again = reload.
-- **⇪ Auf die Uhr** (deploy to watch): copies to `/usr/share/` via `scp`, activates the watchface and restarts the watch UI
-- ***Protokoll*** (log): shows what was added, renamed or removed automatically, plus the QML messages from the test
+  - Click an entry to edit its code (*Apply* or Ctrl+S)
+  - *Base* provides the root settings and the preview image
+  - *Target* selects Qt5 or Qt6
+- **▶ Test on PC:** generates the watchface and opens the test window (round/square, ambient mode, 12h, fixed time …) with the matching Qt version. Click again = reload.
+- **⇪ To the watch:** copies to `/usr/share/` via `scp`, activates the watchface and restarts the watch UI
+- **Log:** shows what was added, renamed, converted or removed automatically, plus the QML messages from the test
 
 ## What happens automatically
 
@@ -63,9 +83,23 @@ The user interface is in German; the English meaning of each label is given in p
 - Helpers such as `Connections { target: wallClock … }` that move selected hands are added. Lines for parts that were not selected are filtered out, as are the matching lines in `Component.onCompleted` and in functions.
 - Root properties and functions are only included when they are needed.
 - On name conflicts between different watchfaces, ids and properties are renamed (e.g. `hourHand_Pulsedot`).
-- Imports are merged. Images, fonts and JS files from the source watchfaces are copied along.
-- The license headers of all source watchfaces are kept in the generated file.
-- The project is saved to `mixed/<name>/wfmix-projekt.json` and can be edited again via *Projekt laden* (load project).
+- Images, fonts and JS files from the source watchfaces are copied along. License headers of all sources are kept.
+- The project is saved to `mixed/<name>/wfmix-projekt.json` and can be edited again via *Load project*.
+
+### Qt5 ↔ Qt6 conversion
+
+| | Qt5 target | Qt6 target |
+|---|---|---|
+| Imports | with versions (`import QtQuick 2.15`) | without versions (`import QtQuick`) |
+| Graphical effects | `QtGraphicalEffects 1.15` | `Qt5Compat.GraphicalEffects` |
+| `Connections` handlers | unchanged | `onFoo: …` → `function onFoo() { … }` |
+| `MultiEffect` shadow (Qt6 only) | converted to `DropShadow` | unchanged |
+| Other `MultiEffect` / Qt6 shaders (`.qsb`) | removed (with note in the log) | unchanged |
+| Qt5 shaders (GLSL in the code) | unchanged | removed (with note in the log) |
+| `FontLoader { name: … }` | unchanged | font name inserted directly (read-only on Qt6) |
+
+To test the *other* Qt version on the PC, wfmix takes `loader.qml` and `fake-components` of that version
+from the git history of your clone (`2c605dc` for Qt5, `master` for Qt6) – nothing changes in your checkout.
 
 ## Tip: smooth second hand
 
@@ -95,16 +129,18 @@ Note: the continuous animation uses noticeably more battery while the display is
 ```
 python3 wfmix/wfmix.py list                     # all watchfaces
 python3 wfmix/wfmix.py blocks analog-commander  # building blocks of a watchface
-python3 wfmix/wfmix.py build mixed/NAME/wfmix-projekt.json
-python3 wfmix/wfmix.py test NAME
+python3 wfmix/wfmix.py build mixed/NAME/wfmix-projekt.json [--target 5|6]
+python3 wfmix/wfmix.py test NAME [--target 5|6]
 python3 wfmix/wfmix.py deploy NAME --host 192.168.2.15
+python3 wfmix/wfmix.py --lang en                # language of UI and messages (de/en)
 python3 wfmix/wfmix.py --help                   # all options
 ```
 
 ## Notes
 
 - The `stubs/` folder contains placeholders for `org.asteroid.controls`, `org.asteroid.utils` and `org.asteroid.sensorlogd`. They are used **on the PC only**, so watchfaces with these imports run in the test window. They are never copied to the watch.
-- For testing, a copy of `loader.qml` with `compositor`, `desktop`, `localeManager` and `burnInProtectionManager` is created (in `~/.cache/wfmix`).
+- For testing, wfmix uses a copy of `loader.qml` with additional objects the watch launcher provides (`compositor`, `desktop`, `localeManager`, `burnInProtectionManager`). Temporary files are kept in `~/.cache/wfmix`.
+- Qt 6.4 (Ubuntu 24.04) has no `QtQuick.Effects` (`MultiEffect`, Qt ≥ 6.5). Watchfaces using it (e.g. analog-nort) cannot be tested with Qt6 on such a PC; on the watch they work. Testing them with target Qt5 works (shadow is converted).
 - Generated watchfaces contain code and assets from unofficial-watchfaces. Those keep their original licenses (mostly LGPL-2.1-or-later; fonts as listed in the unofficial-watchfaces README).
 
 ## License

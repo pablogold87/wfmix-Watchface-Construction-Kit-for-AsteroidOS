@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>wfmix – Watchface-Baukasten</title>
+<title>wfmix</title>
 <style>
 :root{
   --bg:#0f1216; --panel:#161a20; --panel2:#1c2129; --line:#2a313b; --text:#e6e9ee; --mute:#8b95a3;
@@ -22,11 +22,14 @@ button.sm{padding:2px 7px;font-size:12px}
 button:disabled{opacity:.45;cursor:default}
 input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc)}
-header{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
-header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
+header{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+header h1{font-size:16px;margin:0 6px 0 0;font-weight:650;letter-spacing:.2px}
 header h1 span{color:var(--acc)}
-.chip{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+.chip{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
 .chip.ok{color:var(--ok);border-color:#2f5a37}.chip.bad{color:var(--err);border-color:#5a2f2f}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;padding:2px 9px;font-size:12px;color:var(--mute)}
+.seg button.on{background:var(--acc2);color:#fff}
 .sp{flex:1}
 main{flex:1;display:grid;grid-template-columns:270px minmax(320px,1fr) minmax(330px,1fr);min-height:0}
 section{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
@@ -58,7 +61,7 @@ section:last-child{border-right:0}
 .tag.h{background:#2c2a1b;color:var(--warn)}
 .tag.d{background:#1b2a2c;color:var(--acc)}
 .tag.e{background:#2a1f2c;color:#d9a3ff}
-.in{color:var(--ok);font-size:12px}
+.tag.q{background:#2c1f1f;color:var(--err)}
 .add{width:28px;height:28px;padding:0;border-radius:50%;font-size:17px;line-height:1;flex:none}
 .mine .row{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #1d222a;cursor:pointer}
 .mine .row:hover{background:var(--panel)}
@@ -78,7 +81,7 @@ section:last-child{border-right:0}
 textarea{flex:1;width:100%;resize:none;border:0;background:#0b0d10;color:#d6dde6;font:12.5px/1.45 var(--mono);padding:10px 12px;tab-size:4;white-space:pre}
 #log{flex:1;overflow:auto;background:#0b0d10;font:12px/1.45 var(--mono);padding:8px 12px;white-space:pre-wrap}
 #log .head{color:var(--acc);font-weight:600}
-#log .err{color:var(--err)}#log .warn{color:#b8c0cc}#log .ok{color:var(--ok)}#log .cmd{color:var(--cmd)}#log .info{color:#c6cdd6}
+#log .err{color:var(--err)}#log .warn{color:#e3c27a}#log .ok{color:var(--ok)}#log .cmd{color:var(--cmd)}#log .info{color:#c6cdd6}
 .badge{background:var(--err);color:#fff;border-radius:99px;font-size:10px;padding:0 6px;margin-left:4px}
 .toast{position:fixed;right:16px;bottom:16px;background:var(--panel2);border:1px solid var(--acc2);padding:8px 14px;border-radius:8px;opacity:0;transition:.2s;pointer-events:none}
 .toast.show{opacity:1}
@@ -88,63 +91,70 @@ textarea{flex:1;width:100%;resize:none;border:0;background:#0b0d10;color:#d6dde6
 </head>
 <body>
 <header>
-  <h1><span>wf</span>mix · Watchface-Baukasten</h1>
-  <span id="chipQml" class="chip">qmlscene …</span>
-  <span class="chip" title="Watchfaces aus dem Repo">Qt5 / AsteroidOS ≤ 2.1</span>
+  <h1><span>wf</span>mix · <span data-t="appTitle" style="color:inherit"></span></h1>
+  <span id="chipRepo" class="chip"></span>
+  <span id="chipT5" class="chip"></span>
+  <span id="chipT6" class="chip"></span>
   <div class="sp"></div>
-  <label class="chip" style="display:flex;gap:6px;align-items:center;border:0">Uhr
-    <input id="host" style="width:130px;padding:2px 6px" title="IP der Uhr (Developer-Mode)">
+  <label class="chip" style="display:flex;gap:6px;align-items:center;border:0"><span data-t="watch"></span>
+    <input id="host" style="width:130px;padding:2px 6px" data-tt="hostTip">
   </label>
-  <button class="sm" id="btnInfo" title="ssh root@IP – Version abfragen">Verbindung prüfen</button>
+  <button class="sm" id="btnInfo" data-t="checkConn" data-tt="checkConnTip"></button>
+  <div class="seg" id="langSeg"><button data-l="de">DE</button><button data-l="en">EN</button></div>
 </header>
 
 <main>
   <!-- Spalte 1: Watchfaces -->
   <section>
     <div class="sh">
-      <input id="q" placeholder="Watchface suchen …" style="flex:1;min-width:0">
+      <input id="q" data-tp="search" style="flex:1;min-width:0">
     </div>
     <div class="sh" style="padding-top:6px;padding-bottom:6px">
       <div class="tabs" id="ftabs">
-        <button data-f="all" class="on">Alle</button>
-        <button data-f="analog">Analog</button>
-        <button data-f="digital">Digital</button>
-        <button data-f="own">Eigene</button>
+        <button data-f="all" class="on" data-t="fAll"></button>
+        <button data-f="analog" data-t="fAnalog"></button>
+        <button data-f="digital" data-t="fDigital"></button>
+        <button data-f="own" data-t="fOwn"></button>
       </div>
     </div>
     <div class="scroll faces" id="faces"></div>
   </section>
 
-  <!-- Spalte 2: Bausteine des gewählten Watchfaces -->
+  <!-- Spalte 2: Bausteine -->
   <section>
-    <div id="fhead" class="fhead"><div class="empty" style="padding:0">Links ein Watchface wählen.</div></div>
-    <div class="sh"><h2>Bausteine</h2><div class="sp"></div>
-      <span class="hint" style="padding:0">Klick = Code ansehen · ＋ = übernehmen</span></div>
+    <div id="fhead" class="fhead"><div class="empty" style="padding:0" data-t="pickFace"></div></div>
+    <div class="sh"><h2 data-t="blocks"></h2><div class="sp"></div>
+      <span class="hint" style="padding:0" data-t="blocksHint"></span></div>
     <div class="scroll" id="blocks"></div>
   </section>
 
   <!-- Spalte 3: Mein Watchface -->
   <section class="mine">
-    <div class="sh"><h2>Mein Watchface</h2><div class="sp"></div>
-      <select id="projects" title="Gespeichertes Projekt laden"><option value="">Projekt laden …</option></select>
-      <button class="sm ghost" id="btnNew" title="Neu beginnen">Neu</button>
+    <div class="sh"><h2 data-t="myFace"></h2><div class="sp"></div>
+      <select id="projects" data-tt="loadTip"></select>
+      <button class="sm ghost" id="btnNew" data-t="new" data-tt="newTip"></button>
     </div>
     <div class="form">
-      <label for="name">Name</label>
-      <input id="name" placeholder="z.B. mein-commander" spellcheck="false">
-      <label for="base">Basis</label>
-      <select id="base" title="Liefert Wurzel-Typ, Grundeinstellungen und Vorschaubild"></select>
+      <label for="name" data-t="name"></label>
+      <input id="name" data-tp="namePh" spellcheck="false">
+      <label for="base" data-t="base"></label>
+      <select id="base" data-tt="baseTip"></select>
+      <label for="target" data-t="target"></label>
+      <select id="target" data-tt="targetTip">
+        <option value="5"></option>
+        <option value="6"></option>
+      </select>
     </div>
-    <div class="hint">Reihenfolge = Zeichenreihenfolge: weiter unten liegt oben (sofern kein <code>z</code> gesetzt ist). Ziehen zum Umsortieren.</div>
+    <div class="hint" data-th="orderHint"></div>
     <div class="scroll" id="mine"></div>
     <div class="actions">
-      <button class="pri" id="btnTest" title="Erzeugen und im Testfenster öffnen">▶ Am PC testen</button>
-      <button id="btnStop" title="Testfenster schließen">■</button>
-      <button id="btnBuild" title="Nur Dateien erzeugen">Erzeugen</button>
-      <button id="btnDeploy" title="Erzeugen, per SSH auf die Uhr kopieren und aktivieren">⇪ Auf die Uhr</button>
+      <button class="pri" id="btnTest" data-t="test" data-tt="testTip"></button>
+      <button id="btnStop" data-tt="stopTip">■</button>
+      <button id="btnBuild" data-t="build" data-tt="buildTip"></button>
+      <button id="btnDeploy" data-t="deploy" data-tt="deployTip"></button>
       <div class="sp"></div>
-      <button class="ghost sm" id="btnOpen" title="Erzeugte QML-Datei im Editor öffnen">QML öffnen</button>
-      <button class="ghost sm" id="btnUndeploy" title="Watchface von der Uhr löschen">Von Uhr löschen</button>
+      <button class="ghost sm" id="btnOpen" data-t="openQml" data-tt="openQmlTip"></button>
+      <button class="ghost sm" id="btnUndeploy" data-t="undeploy" data-tt="undeployTip"></button>
     </div>
   </section>
 </main>
@@ -153,14 +163,14 @@ textarea{flex:1;width:100%;resize:none;border:0;background:#0b0d10;color:#d6dde6
 <div class="bottom" id="bottom">
   <div class="sh" style="padding:6px 12px">
     <div class="tabs" id="btabs">
-      <button data-t="code" class="on">Code</button>
-      <button data-t="result">Ergebnis-QML</button>
-      <button data-t="log">Protokoll<span id="errBadge"></span></button>
+      <button data-tab="code" class="on" data-t="tCode"></button>
+      <button data-tab="result" data-t="tResult"></button>
+      <button data-tab="log"><span data-t="tLog"></span><span id="errBadge"></span></button>
     </div>
     <span id="codeInfo" class="hint" style="padding:0 6px"></span>
     <div class="sp"></div>
     <span id="codeBtns" style="display:flex;gap:6px"></span>
-    <button class="sm ghost" id="btnClearLog" style="display:none">Protokoll leeren</button>
+    <button class="sm ghost" id="btnClearLog" style="display:none" data-t="clearLog"></button>
   </div>
   <textarea id="code" spellcheck="false" readonly></textarea>
   <div id="log" style="display:none"></div>
@@ -169,15 +179,101 @@ textarea{flex:1;width:100%;resize:none;border:0;background:#0b0d10;color:#d6dde6
 
 <script>
 "use strict";
-const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// ---------------------------------------------------------------- Texte / strings
+const I18N = {
+  de: {
+    appTitle: "Watchface-Baukasten", watch: "Uhr", hostTip: "IP der Uhr (Developer-Mode)",
+    checkConn: "Verbindung prüfen", checkConnTip: "ssh root@IP – Version und Qt der Uhr abfragen",
+    repo: "Repo: Qt{0}", repoTip: "Ausgecheckter Stand von unofficial-watchfaces",
+    tester: "Test Qt{0}", testerOk: "Test am PC mit Qt{0} möglich", testerMissing: "Für den Test mit Qt{0} fehlen Pakete (siehe Anleitung)",
+    search: "Watchface suchen …", fAll: "Alle", fAnalog: "Analog", fDigital: "Digital", fOwn: "Eigene",
+    nBlocks: "{0} Bausteine", own: "eigenes", pickFace: "Links ein Watchface wählen.",
+    blocks: "Bausteine", blocksHint: "Klick = Code ansehen · ＋ = übernehmen",
+    addAll: "Alle übernehmen", addAllTip: "Alle Bausteine übernehmen (z.B. um ein Watchface zu bearbeiten und Teile zu löschen)",
+    asBase: "Als Basis", asBaseTip: "Als Basis verwenden", testOrig: "Original testen", testOrigTip: "Original im Testfenster öffnen",
+    fullCode: "Ganzer Code", fullSuffix: " (komplett)", noImg: "kein Bild",
+    alreadyIn: "schon übernommen – Klick entfernt ihn wieder", addTip: "übernehmen", lines: "{0} Zeilen",
+    helper: "Helfer", helperTip: "Zeichnet nichts, liefert Daten oder steuert andere Bausteine",
+    needs: "braucht: {0}", needsTip: "Wird automatisch mitgenommen",
+    uses: "nutzt: {0}", usesTip: "Wurzel-Properties/Funktionen, die automatisch mitkommen",
+    only: "nur Qt{0}", onlyTip: "Läuft nur unter Qt{0}. Beim anderen Ziel passt wfmix den Effekt an oder entfernt ihn.",
+    noBlocks: "Dieses Watchface hat keine eigenen Bausteine (es baut auf einer Komponente auf). Es kann aber als Basis dienen.",
+    autoNeed: "Automatisch bei Bedarf: {0}", rootProps: "{0} Wurzel-Properties", handlers: "Handler: {0}",
+    myFace: "Mein Watchface", loadTip: "Gespeichertes Projekt laden", loadProj: "Projekt laden …",
+    new: "Neu", newTip: "Neu beginnen", name: "Name", namePh: "z.B. mein-commander", base: "Basis",
+    baseTip: "Liefert Wurzel-Typ, Grundeinstellungen und Vorschaubild",
+    target: "Ziel", targetTip: "Für welche AsteroidOS-Version das Watchface erzeugt wird",
+    t5: "Qt5 – AsteroidOS ≤ 2.1", t6: "Qt6 – AsteroidOS ≥ 2.2",
+    orderHint: "Reihenfolge = Zeichenreihenfolge: weiter unten liegt oben (sofern kein <code>z</code> gesetzt ist). Ziehen zum Umsortieren.",
+    edited: "bearbeitet", drag: "ziehen", up: "nach oben (weiter hinten)", down: "nach unten (weiter vorne)", del: "entfernen",
+    emptyMine: "Noch leer.<br>Links ein Watchface wählen und Bausteine mit ＋ übernehmen –<br>oder „Alle übernehmen“ und dann Unerwünschtes mit ✕ löschen.",
+    test: "▶ Am PC testen", testTip: "Erzeugen und im Testfenster öffnen", stopTip: "Testfenster schließen",
+    build: "Erzeugen", buildTip: "Nur Dateien erzeugen", deploy: "⇪ Auf die Uhr", deployTip: "Erzeugen, per SSH auf die Uhr kopieren und aktivieren",
+    openQml: "QML öffnen", openQmlTip: "Erzeugte QML-Datei im Editor öffnen", undeploy: "Von Uhr löschen", undeployTip: "Watchface von der Uhr löschen",
+    tCode: "Code", tResult: "Ergebnis-QML", tLog: "Protokoll", clearLog: "Protokoll leeren",
+    viewOnly: "  (nur ansehen)", apply: "Übernehmen", original: "Original", editing: "Bearbeiten: {0}  ({1})",
+    savedEdit: "Änderung gespeichert", unchanged: "Unverändert", restored: "Original wiederhergestellt",
+    noBlocksYet: "// Noch keine Bausteine gewählt.", error: "// Fehler: ", buildNotes: "Hinweise beim Zusammenbau:",
+    needBlocks: "Erst Bausteine übernehmen", needName: "Bitte einen Namen eingeben",
+    confirmAll: "Alle Bausteine von {0} hinzufügen?", confirmNew: "Aktuelles Watchface verwerfen? (Bereits erzeugte Dateien bleiben erhalten.)",
+    confirmDeploy: "„{0}“ auf die Uhr ({1}) kopieren und aktivieren?\nDie Oberfläche der Uhr startet dabei kurz neu.",
+    confirmUndeploy: "„{0}“ von der Uhr löschen?", loaded: "Geladen: {0}", built: "Erzeugt: {0}", baseSet: "Basis: {0}",
+    watchQt: "Die Uhr nutzt Qt{0} – Ziel wurde auf Qt{0} gestellt.", startErr: "Fehler beim Start: ",
+    namePrefix: "mein-"
+  },
+  en: {
+    appTitle: "Watchface construction kit", watch: "Watch", hostTip: "Watch IP (Developer mode)",
+    checkConn: "Check connection", checkConnTip: "ssh root@IP – query version and Qt of the watch",
+    repo: "Repo: Qt{0}", repoTip: "Checked-out state of unofficial-watchfaces",
+    tester: "Test Qt{0}", testerOk: "Testing on the PC with Qt{0} is available", testerMissing: "Packages for testing with Qt{0} are missing (see instructions)",
+    search: "Search watchface …", fAll: "All", fAnalog: "Analog", fDigital: "Digital", fOwn: "Own",
+    nBlocks: "{0} blocks", own: "own", pickFace: "Pick a watchface on the left.",
+    blocks: "Building blocks", blocksHint: "Click = view code · ＋ = add",
+    addAll: "Add all", addAllTip: "Add all blocks (e.g. to edit a watchface and delete parts)",
+    asBase: "Use as base", asBaseTip: "Use as base", testOrig: "Test original", testOrigTip: "Open the original in the test window",
+    fullCode: "Full code", fullSuffix: " (complete)", noImg: "no image",
+    alreadyIn: "already added – click to remove it", addTip: "add", lines: "{0} lines",
+    helper: "Helper", helperTip: "Draws nothing, provides data or controls other blocks",
+    needs: "needs: {0}", needsTip: "Added automatically",
+    uses: "uses: {0}", usesTip: "Root properties/functions that come along automatically",
+    only: "Qt{0} only", onlyTip: "Only works on Qt{0}. For the other target wfmix adapts or removes the effect.",
+    noBlocks: "This watchface has no blocks of its own (it is built on a component). It can still be used as base.",
+    autoNeed: "Added automatically when needed: {0}", rootProps: "{0} root properties", handlers: "Handlers: {0}",
+    myFace: "My watchface", loadTip: "Load saved project", loadProj: "Load project …",
+    new: "New", newTip: "Start over", name: "Name", namePh: "e.g. my-commander", base: "Base",
+    baseTip: "Provides root type, base settings and preview image",
+    target: "Target", targetTip: "Which AsteroidOS version the watchface is generated for",
+    t5: "Qt5 – AsteroidOS ≤ 2.1", t6: "Qt6 – AsteroidOS ≥ 2.2",
+    orderHint: "Order = drawing order: further down is drawn on top (unless <code>z</code> is set). Drag to reorder.",
+    edited: "edited", drag: "drag", up: "move up (further back)", down: "move down (further front)", del: "remove",
+    emptyMine: "Still empty.<br>Pick a watchface on the left and add blocks with ＋ –<br>or “Add all” and then delete what you don't want with ✕.",
+    test: "▶ Test on PC", testTip: "Generate and open in the test window", stopTip: "Close test window",
+    build: "Generate", buildTip: "Only generate the files", deploy: "⇪ To the watch", deployTip: "Generate, copy to the watch via SSH and activate",
+    openQml: "Open QML", openQmlTip: "Open the generated QML file in an editor", undeploy: "Remove from watch", undeployTip: "Delete the watchface from the watch",
+    tCode: "Code", tResult: "Result QML", tLog: "Log", clearLog: "Clear log",
+    viewOnly: "  (view only)", apply: "Apply", original: "Original", editing: "Editing: {0}  ({1})",
+    savedEdit: "Change saved", unchanged: "Unchanged", restored: "Original restored",
+    noBlocksYet: "// No blocks selected yet.", error: "// Error: ", buildNotes: "Notes from building:",
+    needBlocks: "Add some blocks first", needName: "Please enter a name",
+    confirmAll: "Add all blocks of {0}?", confirmNew: "Discard current watchface? (Already generated files are kept.)",
+    confirmDeploy: "Copy “{0}” to the watch ({1}) and activate it?\nThe watch UI restarts briefly.",
+    confirmUndeploy: "Delete “{0}” from the watch?", loaded: "Loaded: {0}", built: "Generated: {0}", baseSet: "Base: {0}",
+    watchQt: "The watch uses Qt{0} – target set to Qt{0}.", startErr: "Error on start: ",
+    namePrefix: "my-"
+  }
+};
 const LS = {
   get(k, d){ try { const v = localStorage.getItem("wfmix." + k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem("wfmix." + k, JSON.stringify(v)); } catch(e){} }
 };
+let LANG = LS.get("lang", null) || ((navigator.language || "en").toLowerCase().startsWith("de") ? "de" : "en");
+function T(k, ...a){ let s = (I18N[LANG] && I18N[LANG][k]) || I18N.de[k] || k; a.forEach((v, i) => { s = s.split("{" + i + "}").join(v); }); return s; }
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let S = { faces: [], filter: "all", q: "", face: null, faceCache: {}, sel: null,
-          proj: LS.get("proj", {name: "", base: "", items: []}), mineSel: -1,
-          tab: "code", logN: 0, errs: 0 };
+          proj: LS.get("proj", {name: "", base: "", target: "", items: []}), mineSel: -1,
+          tab: "code", logN: 0, errs: 0, st: null };
 
 async function api(path, body){
   const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body)});
@@ -186,37 +282,62 @@ async function api(path, body){
   if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
   return d;
 }
-function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2200); }
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2600); }
 function save(){ LS.set("proj", S.proj); }
+
+// ---------------------------------------------------------------- Sprache
+function applyLang(){
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-t]").forEach(e => { e.textContent = T(e.dataset.t); });
+  document.querySelectorAll("[data-th]").forEach(e => { e.innerHTML = T(e.dataset.th); });
+  document.querySelectorAll("[data-tt]").forEach(e => { e.title = T(e.dataset.tt); });
+  document.querySelectorAll("[data-tp]").forEach(e => { e.placeholder = T(e.dataset.tp); });
+  $("#target").options[0].textContent = T("t5"); $("#target").options[1].textContent = T("t6");
+  [...$("#langSeg").children].forEach(b => b.classList.toggle("on", b.dataset.l === LANG));
+  renderChips(); renderProjects(); renderFaces(); renderMine(); if (S.face) renderFace();
+  if (S.tab === "code" && codeState.info) showCode(codeState.txt, codeState.infoFn ? codeState.infoFn() : codeState.info, codeState.ed, codeState.infoFn);
+  if (S.tab === "result") showResult();
+}
+$("#langSeg").onclick = async e => { const b = e.target.closest("button"); if (!b) return;
+  LANG = b.dataset.l; LS.set("lang", LANG); try { await api("/api/lang", {lang: LANG}); } catch(err){}
+  applyLang(); };
 
 // ---------------------------------------------------------------- Start
 async function init(){
+  try { await api("/api/lang", {lang: LANG}); } catch(e){}
   const st = await api("/api/state");
-  S.faces = st.faces;
-  const c = $("#chipQml");
-  c.textContent = st.qmlscene ? "qmlscene ✓" : "qmlscene fehlt";
-  c.className = "chip " + (st.qmlscene ? "ok" : "bad");
-  if (!st.qmlscene) c.title = "Für den PC-Test: sudo apt install qmlscene qml-module-qtquick2 qml-module-qtgraphicaleffects …";
+  S.st = st; S.faces = st.faces;
+  if (!S.proj.target) S.proj.target = st.repoQt;
   $("#host").value = LS.get("host", st.host);
-  const ps = $("#projects");
-  ps.innerHTML = '<option value="">Projekt laden …</option>' + st.projects.map(p => `<option>${esc(p)}</option>`).join("");
-  renderFaces(); renderMine();
+  applyLang();
   const last = LS.get("face", null);
   if (last && S.faces.find(f => f.id === last)) selectFace(last);
+}
+function renderChips(){
+  const st = S.st; if (!st) return;
+  const r = $("#chipRepo"); r.textContent = T("repo", st.repoQt); r.title = T("repoTip") + ": " + st.repo;
+  ["5", "6"].forEach(q => { const c = $("#chipT" + q); const ok = st.testers[q];
+    c.textContent = T("tester", q) + (ok ? " ✓" : " ✗"); c.className = "chip " + (ok ? "ok" : "bad");
+    c.title = ok ? T("testerOk", q) : T("testerMissing", q); });
+}
+function renderProjects(){
+  if (!S.st) return;
+  $("#projects").innerHTML = `<option value="">${esc(T("loadProj"))}</option>` + S.st.projects.map(p => `<option>${esc(p)}</option>`).join("");
 }
 
 // ---------------------------------------------------------------- Watchface-Liste
 function kindOf(f){ return f.id.startsWith("analog") ? "analog" : (f.id.startsWith("digital") || f.id.startsWith("binary")) ? "digital" : "other"; }
 function renderFaces(){
   const q = S.q.toLowerCase();
+  const repoQt = S.st ? S.st.repoQt : "";
   const list = S.faces.filter(f => (!q || f.id.toLowerCase().includes(q))
      && (S.filter === "all" || (S.filter === "own" ? f.own : (!f.own && kindOf(f) === S.filter))));
   $("#faces").innerHTML = list.map(f => `
     <div class="f ${S.face && S.face.id === f.id ? "sel" : ""}" data-id="${esc(f.id)}">
       <img loading="lazy" src="/api/thumb?id=${encodeURIComponent(f.id)}" onerror="this.outerHTML='<div class=noimg>?</div>'">
       <div style="min-width:0"><div class="n">${esc(f.id)}</div>
-      <div class="c">${f.blocks} Bausteine${f.own ? " · eigenes" : ""}${f.rootType !== "Item" ? " · " + esc(f.rootType) : ""}</div></div>
-    </div>`).join("") || '<div class="empty">Nichts gefunden.</div>';
+      <div class="c">${esc(T("nBlocks", f.blocks))}${f.own ? " · " + esc(T("own")) + " · Qt" + esc(f.qt) : ""}${f.rootType !== "Item" ? " · " + esc(f.rootType) : ""}</div></div>
+    </div>`).join("") || '<div class="empty">–</div>';
 }
 $("#faces").onclick = e => { const el = e.target.closest(".f"); if (el) selectFace(el.dataset.id); };
 $("#q").oninput = e => { S.q = e.target.value; renderFaces(); };
@@ -237,34 +358,35 @@ function inMine(fid, key){ return S.proj.items.some(i => i.face === fid && i.key
 function renderFace(){
   const f = S.face;
   $("#fhead").innerHTML = `
-    <img src="/api/thumb?id=${encodeURIComponent(f.id)}" onerror="this.outerHTML='<div class=noimg>kein Bild</div>'">
+    <img src="/api/thumb?id=${encodeURIComponent(f.id)}" onerror="this.outerHTML='<div class=noimg>${esc(T("noImg"))}</div>'">
     <div style="min-width:0">
-      <h3>${esc(f.id)}</h3>
+      <h3>${esc(f.id)} <span class="tag">Qt${esc(f.qt)}</span></h3>
       <div class="btns">
-        <button class="sm" id="bAll" title="Alle Bausteine übernehmen (z.B. um ein Watchface zu bearbeiten und Teile zu löschen)">Alle übernehmen</button>
-        <button class="sm" id="bBase" title="Als Basis verwenden">Als Basis</button>
-        <button class="sm ghost" id="bOrig" title="Original im Testfenster öffnen">Original testen</button>
-        <button class="sm ghost" id="bSrc">Ganzer Code</button>
+        <button class="sm" id="bAll" title="${esc(T("addAllTip"))}">${esc(T("addAll"))}</button>
+        <button class="sm" id="bBase" title="${esc(T("asBaseTip"))}">${esc(T("asBase"))}</button>
+        <button class="sm ghost" id="bOrig" title="${esc(T("testOrigTip"))}">${esc(T("testOrig"))}</button>
+        <button class="sm ghost" id="bSrc">${esc(T("fullCode"))}</button>
       </div>
     </div>`;
   $("#bAll").onclick = () => { addAll(f); };
-  $("#bBase").onclick = () => { S.proj.base = f.id; save(); renderMine(); toast("Basis: " + f.id); };
-  $("#bOrig").onclick = () => runTest({name: f.qml, origDir: f.folder});
-  $("#bSrc").onclick = async () => { showCode(await api("/api/source?id=" + encodeURIComponent(f.id)), f.id + " (komplett)", null); };
+  $("#bBase").onclick = () => { S.proj.base = f.id; save(); renderMine(); toast(T("baseSet", f.id)); };
+  $("#bOrig").onclick = () => runTest({name: f.qml, origDir: f.own ? null : f.folder});
+  $("#bSrc").onclick = async () => { showCode(await api("/api/source?id=" + encodeURIComponent(f.id)), f.id + T("fullSuffix"), null); };
   const extra = [];
-  if (f.props.length) extra.push(`${f.props.length} Wurzel-Properties`);
-  if (f.handlers.length) extra.push(`Handler: ${f.handlers.map(h => h.name).join(", ")}`);
+  if (f.props.length) extra.push(T("rootProps", f.props.length));
+  if (f.handlers.length) extra.push(T("handlers", f.handlers.map(h => h.name).join(", ")));
   $("#blocks").innerHTML = (f.blockList.map(b => `
     <div class="blk ${S.sel && S.sel.key === b.key ? "sel" : ""}" data-k="${esc(b.key)}">
-      <button class="add" title="${inMine(f.id, b.key) ? "schon übernommen – nochmal hinzufügen" : "übernehmen"}">${inMine(f.id, b.key) ? "✓" : "＋"}</button>
+      <button class="add" title="${esc(inMine(f.id, b.key) ? T("alreadyIn") : T("addTip"))}">${inMine(f.id, b.key) ? "✓" : "＋"}</button>
       <div class="lbl"><b>${esc(b.label)}</b>
-        <div class="meta"><span class="tag">${esc(b.type)}</span><span>${b.lines} Zeilen</span>
-        ${b.helper ? '<span class="tag h" title="Zeichnet nichts, liefert Daten oder steuert andere Bausteine">Helfer</span>' : ""}
-        ${b.deps.length ? `<span class="tag d" title="Wird automatisch mitgenommen">braucht: ${esc(b.deps.join(", "))}</span>` : ""}
-        ${b.uses.length ? `<span class="tag e" title="Wurzel-Properties/Funktionen, die automatisch mitkommen">nutzt: ${esc(b.uses.join(", "))}</span>` : ""}
+        <div class="meta"><span class="tag">${esc(b.type)}</span><span>${esc(T("lines", b.lines))}</span>
+        ${b.only ? `<span class="tag q" title="${esc(T("onlyTip", b.only))}">${esc(T("only", b.only))}</span>` : ""}
+        ${b.helper ? `<span class="tag h" title="${esc(T("helperTip"))}">${esc(T("helper"))}</span>` : ""}
+        ${b.deps.length ? `<span class="tag d" title="${esc(T("needsTip"))}">${esc(T("needs", b.deps.join(", ")))}</span>` : ""}
+        ${b.uses.length ? `<span class="tag e" title="${esc(T("usesTip"))}">${esc(T("uses", b.uses.join(", ")))}</span>` : ""}
         </div></div>
-    </div>`).join("") || '<div class="empty">Dieses Watchface hat keine eigenen Bausteine (es baut auf einer Komponente auf). Es kann aber als Basis dienen.</div>')
-    + (extra.length ? `<div class="hint">Automatisch bei Bedarf: ${esc(extra.join(" · "))}</div>` : "");
+    </div>`).join("") || `<div class="empty">${esc(T("noBlocks"))}</div>`)
+    + (extra.length ? `<div class="hint">${esc(T("autoNeed", extra.join(" · ")))}</div>` : "");
 }
 $("#blocks").onclick = e => {
   const row = e.target.closest(".blk"); if (!row) return;
@@ -275,45 +397,51 @@ $("#blocks").onclick = e => {
 };
 
 // ---------------------------------------------------------------- Mein Watchface
+function defaultName(f){ return T("namePrefix") + f.qml.replace(/^(analog|digital)-/, ""); }
 function addItem(f, b){
+  const idx = S.proj.items.findIndex(i => i.face === f.id && i.key === b.key);
+  if (idx >= 0) { S.proj.items.splice(idx, 1); S.mineSel = -1; save(); renderMine(); renderFace(); toast("✕ " + b.label); return; }
   if (!S.proj.items.length && !S.proj.base) S.proj.base = f.id;
-  if (!S.proj.name) { S.proj.name = "mein-" + f.qml.replace(/^(analog|digital)-/, ""); }
+  if (!S.proj.name) S.proj.name = defaultName(f);
   S.proj.items.push({face: f.id, key: b.key, label: b.label, type: b.type});
   save(); renderMine(); renderFace();
   toast("＋ " + b.label);
 }
 function addAll(f){
-  if (S.proj.items.length && !confirm("Alle Bausteine von " + f.id + " hinzufügen?")) return;
-  if (!S.proj.items.length) { S.proj.base = f.id; if (!S.proj.name) S.proj.name = "mein-" + f.qml.replace(/^(analog|digital)-/, ""); }
+  if (S.proj.items.length && !confirm(T("confirmAll", f.id))) return;
+  if (!S.proj.items.length) { S.proj.base = f.id; if (!S.proj.name) S.proj.name = defaultName(f); }
   f.blockList.forEach(b => { if (!inMine(f.id, b.key)) S.proj.items.push({face: f.id, key: b.key, label: b.label, type: b.type}); });
   save(); renderMine(); renderFace();
 }
 function renderMine(){
   $("#name").value = S.proj.name || "";
+  $("#target").value = S.proj.target || (S.st ? S.st.repoQt : "5");
   const used = [...new Set([S.proj.base, ...S.proj.items.map(i => i.face)].filter(Boolean))];
   $("#base").innerHTML = used.map(u => `<option ${u === S.proj.base ? "selected" : ""}>${esc(u)}</option>`).join("") || "<option value=''>–</option>";
   $("#mine").innerHTML = S.proj.items.map((it, i) => `
     <div class="row ${i === S.mineSel ? "sel" : ""}" draggable="true" data-i="${i}">
-      <span class="grip" title="ziehen">⋮⋮</span>
+      <span class="grip" title="${esc(T("drag"))}">⋮⋮</span>
       <div style="flex:1;min-width:0">
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.label || it.key)} ${it.code ? '<span class="tag e">bearbeitet</span>' : ""}</div>
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.label || it.key)} ${it.code ? `<span class="tag e">${esc(T("edited"))}</span>` : ""}</div>
         <div class="src">${esc(it.face)} · ${esc(it.type || "")}</div>
       </div>
       <div class="acts">
-        <button class="sm ghost" data-a="up" title="nach oben (weiter hinten)">↑</button>
-        <button class="sm ghost" data-a="down" title="nach unten (weiter vorne)">↓</button>
-        <button class="sm ghost" data-a="del" title="entfernen">✕</button>
+        <button class="sm ghost" data-a="up" title="${esc(T("up"))}">↑</button>
+        <button class="sm ghost" data-a="down" title="${esc(T("down"))}">↓</button>
+        <button class="sm ghost" data-a="del" title="${esc(T("del"))}">✕</button>
       </div>
-    </div>`).join("") || '<div class="empty">Noch leer.<br>Links ein Watchface wählen und Bausteine mit ＋ übernehmen –<br>oder „Alle übernehmen“ und dann Unerwünschtes mit ✕ löschen.</div>';
+    </div>`).join("") || `<div class="empty">${T("emptyMine")}</div>`;
 }
 $("#name").oninput = e => { S.proj.name = e.target.value; save(); };
 $("#name").onchange = e => { S.proj.name = e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, ""); save(); renderMine(); };
 $("#base").onchange = e => { S.proj.base = e.target.value; save(); };
-$("#btnNew").onclick = () => { if (S.proj.items.length && !confirm("Aktuelles Watchface verwerfen? (Bereits erzeugte Dateien bleiben erhalten.)")) return;
-  S.proj = {name: "", base: "", items: []}; S.mineSel = -1; save(); renderMine(); if (S.face) renderFace(); };
+$("#target").onchange = e => { S.proj.target = e.target.value; save(); if (S.tab === "result") showResult(); };
+$("#btnNew").onclick = () => { if (S.proj.items.length && !confirm(T("confirmNew"))) return;
+  S.proj = {name: "", base: "", target: S.proj.target || (S.st ? S.st.repoQt : "5"), items: []}; S.mineSel = -1; save(); renderMine(); if (S.face) renderFace(); };
 $("#projects").onchange = async e => {
   const n = e.target.value; e.target.value = ""; if (!n) return;
-  try { const p = await api("/api/project?name=" + encodeURIComponent(n)); S.proj = p; S.mineSel = -1; save(); renderMine(); if (S.face) renderFace(); toast("Geladen: " + n); }
+  try { const p = await api("/api/project?name=" + encodeURIComponent(n)); S.proj = p; if (!S.proj.target) S.proj.target = S.st.repoQt;
+    S.mineSel = -1; save(); renderMine(); if (S.face) renderFace(); toast(T("loaded", n)); }
   catch(err){ toast(err.message); }
 };
 $("#mine").onclick = async e => {
@@ -326,7 +454,6 @@ $("#mine").onclick = async e => {
   else if (!a) { S.mineSel = i; await editItem(i); }
   save(); renderMine(); if (S.face) renderFace();
 };
-// Drag & Drop
 let dragI = -1;
 $("#mine").addEventListener("dragstart", e => { const r = e.target.closest(".row"); if (!r) return; dragI = +r.dataset.i; r.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; });
 $("#mine").addEventListener("dragend", () => { dragI = -1; document.querySelectorAll(".row").forEach(r => r.classList.remove("drag", "over")); });
@@ -340,48 +467,51 @@ async function editItem(i){
   let f; try { f = await loadFace(it.face); } catch(e){ toast(e.message); return; }
   const b = f.blockList.find(x => x.key === it.key);
   const orig = b ? b.code : "";
-  showCode(it.code || orig, `Bearbeiten: ${it.label || it.key}  (${it.face})`, {
-    save(txt){ it.code = (txt.trim() === orig.trim()) ? undefined : txt; if (!it.code) delete it.code; save(); renderMine(); toast(it.code ? "Änderung gespeichert" : "Unverändert"); },
-    reset(){ delete it.code; save(); renderMine(); showCode(orig, `Bearbeiten: ${it.label || it.key}  (${it.face})`, this); toast("Original wiederhergestellt"); }
-  });
+  const infoFn = () => T("editing", it.label || it.key, it.face);
+  const ed = {
+    save(txt){ it.code = (txt.trim() === orig.trim()) ? undefined : txt; if (!it.code) delete it.code; save(); renderMine(); toast(it.code ? T("savedEdit") : T("unchanged")); },
+    reset(){ delete it.code; save(); renderMine(); showCode(orig, infoFn(), ed, infoFn); toast(T("restored")); }
+  };
+  showCode(it.code || orig, infoFn(), ed, infoFn);
 }
 
 // ---------------------------------------------------------------- Unterer Bereich
 function setTab(t){
   S.tab = t;
-  [...$("#btabs").children].forEach(x => x.classList.toggle("on", x.dataset.t === t));
+  [...$("#btabs").children].forEach(x => x.classList.toggle("on", x.dataset.tab === t));
   $("#code").style.display = t === "log" ? "none" : "";
   $("#log").style.display = t === "log" ? "" : "none";
   $("#btnClearLog").style.display = t === "log" ? "" : "none";
   $("#codeInfo").style.display = $("#codeBtns").style.display = t === "code" ? "" : "none";
   if (t === "log") { S.errs = 0; $("#errBadge").innerHTML = ""; const l = $("#log"); l.scrollTop = l.scrollHeight; }
   if (t === "result") showResult();
+  if (t === "code" && codeState.info) { $("#code").value = codeState.txt; $("#code").readOnly = !codeState.ed; }
 }
-$("#btabs").onclick = e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.t); };
-let codeState = {txt: "", info: "", ed: null};
-function showCode(txt, info, editor){
-  codeState = {txt, info, ed: editor};
+$("#btabs").onclick = e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.tab); };
+let codeState = {txt: "", info: "", ed: null, infoFn: null};
+function showCode(txt, info, editor, infoFn){
+  codeState = {txt, info, ed: editor, infoFn: infoFn || null};
   if (S.tab !== "code") setTab("code");
   const c = $("#code");
   c.value = txt; c.readOnly = !editor; c.scrollTop = 0;
-  $("#codeInfo").textContent = info + (editor ? "" : "  (nur ansehen)");
-  $("#codeBtns").innerHTML = editor ? '<button class="sm pri" id="cSave">Übernehmen</button><button class="sm" id="cReset">Original</button>' : "";
-  if (editor) { $("#cSave").onclick = () => editor.save($("#code").value); $("#cReset").onclick = () => editor.reset(); }
+  $("#codeInfo").textContent = info + (editor ? "" : T("viewOnly"));
+  $("#codeBtns").innerHTML = editor ? `<button class="sm pri" id="cSave">${esc(T("apply"))}</button><button class="sm" id="cReset">${esc(T("original"))}</button>` : "";
+  if (editor) { $("#cSave").onclick = () => { codeState.txt = $("#code").value; editor.save($("#code").value); }; $("#cReset").onclick = () => editor.reset(); }
 }
+$("#code").addEventListener("input", e => { if (S.tab === "code" && codeState.ed) codeState.txt = e.target.value; });
 $("#code").addEventListener("keydown", e => {
   if (e.key === "Tab" && !e.target.readOnly) { e.preventDefault(); const t = e.target, s = t.selectionStart;
     t.setRangeText("    ", s, t.selectionEnd, "end"); }
-  if ((e.ctrlKey || e.metaKey) && e.key === "s" && codeState.ed) { e.preventDefault(); codeState.ed.save($("#code").value); }
+  if ((e.ctrlKey || e.metaKey) && e.key === "s" && codeState.ed && S.tab === "code") { e.preventDefault(); codeState.ed.save($("#code").value); }
 });
 async function showResult(){
   const c = $("#code"); c.readOnly = true;
-  if (!S.proj.items.length) { c.value = "// Noch keine Bausteine gewählt."; return; }
+  if (!S.proj.items.length) { c.value = T("noBlocksYet"); return; }
   try { const r = await api("/api/preview", {project: S.proj});
-    c.value = r.qml + (r.log.length ? "\n/* Hinweise beim Zusammenbau:\n" + r.log.map(l => " * " + l).join("\n") + "\n */\n" : ""); }
-  catch(e){ c.value = "// Fehler: " + e.message; }
+    c.value = r.qml + (r.log.length ? "\n/* " + T("buildNotes") + "\n" + r.log.map(l => " * " + l).join("\n") + "\n */\n" : ""); }
+  catch(e){ c.value = T("error") + e.message; }
 }
 
-// Log
 async function pollLog(){
   try {
     const lines = await api("/api/log?since=" + S.logN);
@@ -389,19 +519,21 @@ async function pollLog(){
       const l = $("#log"); const atEnd = l.scrollHeight - l.scrollTop - l.clientHeight < 40;
       const frag = document.createDocumentFragment();
       lines.forEach(x => { const d = document.createElement("div"); d.className = x.k; d.textContent = x.t; frag.appendChild(d);
-        if (x.k === "err") S.errs++; S.logN = x.n; });
+        if (x.k === "err") S.errs++; S.logN = x.n;
+        const m = /Qt([56])\D+Qt\1/.exec(x.t); if (x.k === "ok" && m && !x.t.includes("✓")) watchQt(m[1]); });
       l.appendChild(frag); if (atEnd) l.scrollTop = l.scrollHeight;
       if (S.tab !== "log" && S.errs) $("#errBadge").innerHTML = `<span class="badge">${S.errs}</span>`;
     }
   } catch(e){}
   setTimeout(pollLog, 800);
 }
+function watchQt(q){ if (S.proj.target !== q) { S.proj.target = q; save(); renderMine(); toast(T("watchQt", q)); } }
 $("#btnClearLog").onclick = () => { $("#log").innerHTML = ""; };
 
 // ---------------------------------------------------------------- Aktionen
 function needProj(){
-  if (!S.proj.items.length) { toast("Erst Bausteine übernehmen"); return false; }
-  if (!S.proj.name) { toast("Bitte einen Namen eingeben"); $("#name").focus(); return false; }
+  if (!S.proj.items.length) { toast(T("needBlocks")); return false; }
+  if (!S.proj.name) { toast(T("needName")); $("#name").focus(); return false; }
   return true;
 }
 async function runTest(opt){
@@ -414,30 +546,28 @@ async function runTest(opt){
 $("#btnTest").onclick = () => runTest();
 $("#btnStop").onclick = () => api("/api/stop", {});
 $("#btnBuild").onclick = async () => { if (!needProj()) return; setTab("log");
-  try { const r = await api("/api/build", {project: S.proj}); toast("Erzeugt: " + r.name); refreshOwn(); } catch(e){ toast(e.message); } };
+  try { const r = await api("/api/build", {project: S.proj}); toast(T("built", r.name)); refreshOwn(); } catch(e){ toast(e.message); } };
 $("#btnDeploy").onclick = async () => { if (!needProj()) return;
-  if (!confirm(`„${S.proj.name}“ auf die Uhr (${$("#host").value}) kopieren und aktivieren?\nDie Oberfläche der Uhr startet dabei kurz neu.`)) return;
+  if (!confirm(T("confirmDeploy", S.proj.name, $("#host").value))) return;
   setTab("log"); try { await api("/api/deploy", {project: S.proj, host: $("#host").value, restart: true}); } catch(e){ toast(e.message); } };
 $("#btnUndeploy").onclick = async () => { if (!S.proj.name) return;
-  if (!confirm(`„${S.proj.name}“ von der Uhr löschen?`)) return;
+  if (!confirm(T("confirmUndeploy", S.proj.name))) return;
   setTab("log"); await api("/api/undeploy", {name: S.proj.name, host: $("#host").value}); };
 $("#btnOpen").onclick = async () => { if (!S.proj.name) return; const r = await api("/api/open", {name: S.proj.name}); toast(r.path); };
 $("#btnInfo").onclick = async () => { setTab("log"); await api("/api/watchinfo", {host: $("#host").value}); };
 $("#host").onchange = e => LS.set("host", e.target.value.trim());
 async function refreshOwn(){
-  const st = await api("/api/state"); S.faces = st.faces;
+  const st = await api("/api/state"); S.st = st; S.faces = st.faces;
   delete S.faceCache[S.proj.name];
-  $("#projects").innerHTML = '<option value="">Projekt laden …</option>' + st.projects.map(p => `<option>${esc(p)}</option>`).join("");
-  renderFaces();
+  renderProjects(); renderFaces();
 }
 
-// Größe des unteren Bereichs
 (() => { const r = $("#resz"), b = $("#bottom"); let y0, h0;
   const h = LS.get("bottomH", 0); if (h) b.style.height = h + "px";
   r.onmousedown = e => { y0 = e.clientY; h0 = b.offsetHeight; document.onmousemove = ev => { b.style.height = Math.max(120, h0 - (ev.clientY - y0)) + "px"; };
     document.onmouseup = () => { document.onmousemove = null; LS.set("bottomH", b.offsetHeight); }; }; })();
 
-init().catch(e => { document.body.innerHTML = "<p style='padding:20px'>Fehler beim Start: " + esc(e.message) + "</p>"; });
+init().catch(e => { document.body.innerHTML = "<p style='padding:20px'>" + esc(T("startErr")) + esc(e.message) + "</p>"; });
 pollLog();
 </script>
 </body>
