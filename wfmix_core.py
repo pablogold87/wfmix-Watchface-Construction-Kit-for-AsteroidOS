@@ -17,15 +17,8 @@ import shutil
 
 WF_SUBDIR = os.path.join("usr", "share", "asteroid-launcher", "watchfaces")
 
-# --------------------------------------------------------------------------
-# Sprache / language ("de" oder "en") - wird von wfmix.py gesetzt
-# --------------------------------------------------------------------------
-LANG = "de"
-
-
-def tr(de, en):
-    """Liefert den Text in der eingestellten Sprache."""
-    return en if LANG == "en" else de
+# Uebersetzungen ueber gettext (siehe wfmix_i18n.py) / translations via gettext
+from wfmix_i18n import _  # noqa: E402
 
 
 # --------------------------------------------------------------------------
@@ -486,7 +479,7 @@ class Face(object):
         text, m = self.text, self.m
         mo = re.search(r"^[ \t]*([A-Z][\w]*(?:\.[A-Z][\w]*)*)\s*\{", m, re.M)
         if not mo:
-            raise ValueError(tr("kein Wurzel-Objekt gefunden", "no root object found"))
+            raise ValueError(_("no root object found"))
         self.root_type = mo.group(1)
         ob = m.index("{", mo.start())
         cb = match_brace(m, ob)
@@ -700,7 +693,7 @@ def _filter_statements(code, missing, log, where):
     if ob < 0:
         refs = idents(m)
         if refs & missing:
-            log.append(tr("  – entfernt in %s: %s", "  – removed in %s: %s") % (where, " ".join(code.split())[:90]))
+            log.append(_("  – removed in %s: %s") % (where, " ".join(code.split())[:90]))
             return None
         return code
     cb = match_brace(m, ob)
@@ -709,7 +702,7 @@ def _filter_statements(code, missing, log, where):
     missing = set(missing)
     for s, e in stm:
         if idents(m[s:e]) & missing:
-            log.append(tr("  – entfernt in %s: %s", "  – removed in %s: %s") % (where, " ".join(code[s:e].split())[:90]))
+            log.append(_("  – removed in %s: %s") % (where, " ".join(code[s:e].split())[:90]))
             # Variablen, die hier deklariert wurden, sind jetzt auch "fehlend"
             missing |= set(re.findall(r"\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)", m[s:e]))
             continue
@@ -764,15 +757,15 @@ def _filter_object(text, missing, log, where, depth=0):
                 out.append(mem)
         else:
             if mem.name == "target":
-                log.append(tr("  – %s verworfen (Ziel fehlt)", "  – %s dropped (target missing)") % where)
+                log.append(_("  – %s dropped (target missing)") % where)
                 return None
-            log.append(tr("  – entfernt in %s: %s", "  – removed in %s: %s") % (where, " ".join(mem.text.split())[:90]))
+            log.append(_("  – removed in %s: %s") % (where, " ".join(mem.text.split())[:90]))
     if not changed:
         return text
     real = [x for x in out if x.kind not in ("id",)]
     if not real or all(x.kind in ("assign", "group", "id") for x in out):
         if depth == 0:
-            log.append(tr("  – %s verworfen (nichts mehr zu tun)", "  – %s dropped (nothing left to do)") % where)
+            log.append(_("  – %s dropped (nothing left to do)") % where)
             return None
     parts = []
     for mem in out:
@@ -831,8 +824,7 @@ def emit_imports(lists, target, log=None):
         if target == "5":
             if mod in QT6_ONLY_MODULES:
                 if log is not None:
-                    log.append(tr("! Import '%s' gibt es unter Qt5 nicht – entfernt",
-                                  "! Import '%s' does not exist on Qt5 – removed") % mod)
+                    log.append(_("! Import '%s' does not exist on Qt5 – removed") % mod)
                 continue
             name = QT5_NAME.get(mod, mod)
             ver = ".".join(str(x) for x in vt) if vt else QT5_VERSION.get(name, "1.0")
@@ -885,20 +877,16 @@ def adapt_effects(text, target, log, where):
                          "}"]
                 replacement = "\n".join(indent + l if i else l for i, l in enumerate(lines)) + "\n"
                 need_ge = True
-                log.append(tr("~ %s: MultiEffect-Schatten für Qt5 in DropShadow umgewandelt",
-                              "~ %s: MultiEffect shadow converted to DropShadow for Qt5") % where)
+                log.append(_("~ %s: MultiEffect shadow converted to DropShadow for Qt5") % where)
             else:
                 replacement = ""
-                log.append(tr("~ %s: MultiEffect gibt es unter Qt5 nicht – Effekt entfernt",
-                              "~ %s: MultiEffect does not exist on Qt5 – effect removed") % where)
+                log.append(_("~ %s: MultiEffect does not exist on Qt5 – effect removed") % where)
         elif target == "5" and kind == "ShaderEffect" and ".qsb" in body:
             replacement = ""
-            log.append(tr("~ %s: Qt6-Shader (.qsb) läuft nicht unter Qt5 – Effekt entfernt",
-                          "~ %s: Qt6 shader (.qsb) does not work on Qt5 – effect removed") % where)
+            log.append(_("~ %s: Qt6 shader (.qsb) does not work on Qt5 – effect removed") % where)
         elif target == "6" and kind == "ShaderEffect" and re.search(r"(gl_FragColor|varying|uniform\s)", body):
             replacement = ""
-            log.append(tr("~ %s: Qt5-Shader (GLSL) läuft nicht unter Qt6 – Effekt entfernt",
-                          "~ %s: Qt5 shader (GLSL) does not work on Qt6 – effect removed") % where)
+            log.append(_("~ %s: Qt5 shader (GLSL) does not work on Qt6 – effect removed") % where)
         if replacement is not None:
             text = text[:ls] + (indent + replacement if replacement else "") + text[end:]
     return text, need_ge
@@ -925,8 +913,7 @@ def qt6_fixups(qml, log):
             reps = [(x.start(), x.end()) for x in re.finditer(r"(?<![\w.])%s\s*\.\s*name\b" % re.escape(fid), m2)]
             for s_, e_ in reversed(reps):
                 qml = qml[:s_] + lit + qml[e_:]
-        log.append(tr("~ FontLoader: 'name' ist unter Qt6 nur lesbar – Schriftname %s direkt eingesetzt",
-                      "~ FontLoader: 'name' is read-only on Qt6 – font name %s inserted directly") % lit)
+        log.append(_("~ FontLoader: 'name' is read-only on Qt6 – font name %s inserted directly") % lit)
     return qml
 
 
@@ -973,17 +960,17 @@ def build(repo, project, write=True):
     log = []
     name = safe_name(project.get("name") or "")
     if not name:
-        raise ValueError(tr("Bitte einen Namen für das Watchface angeben (a-z, 0-9, -).", "Please enter a name for the watchface (a-z, 0-9, -)."))
+        raise ValueError(_("Please enter a name for the watchface (a-z, 0-9, -)."))
     items = project.get("items") or []
     if not items:
-        raise ValueError(tr("Es sind noch keine Bausteine ausgewählt.", "No building blocks selected yet."))
+        raise ValueError(_("No building blocks selected yet."))
     faces = {}
 
     def get_face(fid):
         if fid not in faces:
             f = repo.face(fid)
             if f is None:
-                raise ValueError(tr("Watchface '%s' nicht gefunden", "Watchface '%s' not found") % fid)
+                raise ValueError(_("Watchface '%s' not found") % fid)
             faces[fid] = f
         return faces[fid]
 
@@ -1000,11 +987,10 @@ def build(repo, project, write=True):
         f = get_face(it["face"])
         b = f.block_by_key.get(it["key"])
         if b is None:
-            log.append(tr("! Baustein %s in %s nicht gefunden – übersprungen", "! Block %s in %s not found – skipped") % (it["key"], f.fid))
+            log.append(_("! Block %s in %s not found – skipped") % (it["key"], f.fid))
             continue
         if b.key in chosen.get(f.fid, ()):
-            log.append(tr("! Baustein '%s' (%s) war doppelt – nur einmal übernommen",
-                          "! Block '%s' (%s) was listed twice – used only once") % (b.label, f.fid))
+            log.append(_("! Block '%s' (%s) was listed twice – used only once") % (b.label, f.fid))
             continue
         chosen.setdefault(f.fid, set()).add(b.key)
         order.append([f, b, it.get("code")])
@@ -1022,8 +1008,7 @@ def build(repo, project, write=True):
                     # vor dem abhaengigen Baustein einsortieren
                     pos = next(i for i, x in enumerate(order) if x[1] is b)
                     order.insert(pos, [f, o, None])
-                    log.append(tr("+ '%s' aus %s automatisch ergänzt (wird von '%s' benutzt)",
-                                  "+ '%s' from %s added automatically (used by '%s')")
+                    log.append(_("+ '%s' from %s added automatically (used by '%s')")
                                % (o.label, f.fid, b.label))
                     changed = True
     def ids_of_entry(ent):
@@ -1043,8 +1028,7 @@ def build(repo, project, write=True):
             if hb.refs & sel_ids:
                 chosen[fid].add(hb.key)
                 order.append([f, hb, None])
-                log.append(tr("+ Helfer '%s' aus %s automatisch ergänzt (steuert gewählte Bausteine)",
-                              "+ Helper '%s' from %s added automatically (controls selected blocks)")
+                log.append(_("+ Helper '%s' from %s added automatically (controls selected blocks)")
                            % (hb.label, fid))
 
     # 3) Finale id-Mengen und fehlende ids je Quelle
@@ -1154,7 +1138,7 @@ def build(repo, project, write=True):
                     n = "%s_%s%d" % (i, _short(fid), k)
                     k += 1
                 idm[i] = n
-                log.append(tr("~ id '%s' aus %s heißt jetzt '%s' (Namenskonflikt)", "~ id '%s' from %s renamed to '%s' (name conflict)") % (i, fid, n))
+                log.append(_("~ id '%s' from %s renamed to '%s' (name conflict)") % (i, fid, n))
             used_ids.add(idm.get(i, i))
         id_map[fid] = idm
         pm = {}
@@ -1164,8 +1148,7 @@ def build(repo, project, write=True):
             if n in used_root and used_root[n] != norm:
                 nn = n + "_" + _short(fid)
                 pm[n] = nn
-                log.append(tr("~ Property/Funktion '%s' aus %s heißt jetzt '%s' (unterschiedliche Definition)",
-                              "~ Property/function '%s' from %s renamed to '%s' (different definition)")
+                log.append(_("~ Property/function '%s' from %s renamed to '%s' (different definition)")
                            % (n, fid, nn))
             elif n in used_ids and n not in used_root:
                 nn = n + "_" + _short(fid)
@@ -1189,8 +1172,8 @@ def build(repo, project, write=True):
         h = faces[fid].header
         if h and h not in headers:
             headers.append(h)
-    out.append(tr("// Erzeugt mit wfmix aus: ", "// Generated with wfmix from: ") + ", ".join(src_order))
-    out.append(tr("// Basis: ", "// Base: ") + base.fid + "  ·  " + tr("Ziel: Qt", "Target: Qt") + target)
+    out.append(_("// Generated with wfmix from: ") + ", ".join(src_order))
+    out.append(_("// Base: ") + base.fid + "  ·  " + _("Target: Qt") + target)
     for h in headers:
         out.append("")
         out.append(h)
@@ -1222,7 +1205,7 @@ def build(repo, project, write=True):
                 if nn != mem.name:
                     txt = re.sub(r"\b%s\b" % re.escape(mem.name), nn, txt, count=1)
                 if mem.kind == "function":
-                    ft = _filter_statements(txt, missing[fid], log, tr("Funktion %s (%s)", "function %s (%s)") % (mem.name, fid))
+                    ft = _filter_statements(txt, missing[fid], log, _("function %s (%s)") % (mem.name, fid))
                     if ft is not None:
                         txt = ft
                 txt = xform(fid, txt)
@@ -1262,7 +1245,7 @@ def build(repo, project, write=True):
             else:
                 body = ind * 2 + code.strip().rstrip(";") + ";"
             if len(parts) > 1:
-                body = ind * 2 + tr("// aus ", "// from ") + fid + "\n" + body
+                body = ind * 2 + _("// from ") + fid + "\n" + body
             bodies.append(body)
         out.append(ind + new_hn + ": {")
         out.append("\n\n".join(bodies))
@@ -1276,8 +1259,7 @@ def build(repo, project, write=True):
             extra_imports.append("import QtGraphicalEffects 1.15")
         only = qt_only(t)
         if only and only != target:
-            log.append(tr("! '%s' (%s) läuft nur unter Qt%s – auf Qt%s fehlt dieser Teil oder erzeugt Fehler",
-                          "! '%s' (%s) only works on Qt%s – on Qt%s this part is missing or causes errors")
+            log.append(_("! '%s' (%s) only works on Qt%s – on Qt%s this part is missing or causes errors")
                        % (b.label, f.fid, only, target))
         if target == "6":
             t = convert_connections(t)
@@ -1350,7 +1332,7 @@ def write_face(repo, name, qml, src_order, faces, base, project, log):
     proj["target"] = str(project.get("target") or getattr(repo, "qt", "5"))
     with open(os.path.join(path, "wfmix-projekt.json"), "w", encoding="utf-8") as fp:
         json.dump(proj, fp, indent=2, ensure_ascii=False)
-    log.append(tr("= geschrieben: ", "= written: ") + os.path.join(wfd, name + ".qml"))
+    log.append(_("= written: ") + os.path.join(wfd, name + ".qml"))
 
 
 def load_project(repo, name):

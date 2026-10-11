@@ -143,6 +143,24 @@ python3 wfmix/wfmix.py --help                   # alle Optionen
 - Qt 6.4 (Ubuntu 24.04) hat noch kein `QtQuick.Effects` (`MultiEffect`, ab Qt 6.5). Watchfaces damit (z.B. analog-nort) lassen sich auf so einem PC nicht mit Qt6 testen, auf der Uhr laufen sie. Mit Ziel Qt5 klappt der Test (der Schatten wird umgewandelt).
 - Erzeugte Watchfaces enthalten Code und Dateien aus unofficial-watchfaces. Dafür gelten weiterhin deren Lizenzen (meist LGPL-2.1-or-later; Schriften laut README von unofficial-watchfaces).
 
+## Übersetzungen
+
+wfmix nutzt **GNU gettext**. Ausgangssprache ist Englisch, Übersetzungen sind normale `.po`-Dateien:
+
+```
+locale/wfmix.pot                    # Vorlage mit allen Texten (erzeugt)
+locale/de/LC_MESSAGES/wfmix.po      # Deutsch
+```
+
+Derselbe Katalog gilt für Meldungen aus Python (`_("…")`) und für die Weboberfläche (`T("…")` und `data-t…`-Attribute, als JSON ausgeliefert).
+Die `.po`-Dateien werden beim Start nach `~/.cache/wfmix/locale` übersetzt – `msgfmt` ist nicht nötig. Jede Sprache mit `.po`-Datei erscheint automatisch in der Sprachauswahl.
+
+- **Sprache hinzufügen:** `python3 tools/update_po.py --init fr`, dann `locale/fr/LC_MESSAGES/wfmix.po` übersetzen (z.B. mit Poedit) und wfmix neu starten.
+- **Nach Textänderungen im Code:** `python3 tools/update_po.py` aktualisiert die Vorlage und alle `.po`-Dateien (vorhandene Übersetzungen bleiben, neue Texte kommen dazu, ungenutzte fallen weg).
+- **Vollständigkeit prüfen:** `python3 tools/update_po.py --check`
+
+Geprüft: alle 162 Texte erscheinen auf Deutsch und Englisch genau wie vor der Umstellung (Python-Meldungen und die komplette Oberfläche mit der Vorversion verglichen); die von wfmix geschriebenen `.mo`-Dateien liefern dieselben Ergebnisse wie Dateien von `msgfmt`; `msgfmt -c` akzeptiert die `.po`-Dateien. Nicht geprüft: Sprachen mit Schreibrichtung von rechts nach links und Pluralformen (wfmix hat noch keine Texte mit Mehrzahl).
+
 ## Sicherheit
 
 wfmix startet einen kleinen Webserver **nur auf deinem eigenen Rechner** (127.0.0.1) und ruft lokale Programme auf

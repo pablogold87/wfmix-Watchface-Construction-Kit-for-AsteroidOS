@@ -1,0 +1,714 @@
+# wfmix translations – de
+# This file is distributed under the same license as wfmix (MIT).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: wfmix\n"
+"POT-Creation-Date: 2026-10-11 18:11+0000\n"
+"PO-Revision-Date: 2026-10-11 18:11+0000\n"
+"Last-Translator: wfmix contributors\n"
+"Language-Team: de\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: wfmix.py:112
+#, python-format
+msgid "Invalid watch address: %r"
+msgstr "Ungültige Adresse der Uhr: %r"
+
+#: wfmix.py:118
+#, python-format
+msgid "Invalid port: %s"
+msgstr "Ungültiger Port: %s"
+
+#: wfmix.py:126
+#, python-format
+msgid "Invalid watchface name: %r (allowed: a-z, 0-9, -)"
+msgstr "Ungültiger Watchface-Name: %r (erlaubt: a-z, 0-9, -)"
+
+#: wfmix.py:154
+#, python-format
+msgid "Program '%s' not found"
+msgstr "Programm '%s' nicht gefunden"
+
+#: wfmix.py:412
+#, python-format
+msgid ""
+"The program for testing with Qt%s is missing. Install with:\n"
+"  %s"
+msgstr ""
+"Für den Test mit Qt%s fehlt das Programm. Installieren mit:\n"
+"  %s"
+
+#: wfmix.py:417
+#, python-format
+msgid "loader.qml/fake-components for testing with Qt%s are missing. The repo folder must be a git clone of unofficial-watchfaces (containing %s)."
+msgstr "Für den Test mit Qt%s fehlen loader.qml/fake-components. Der Repo-Ordner muss ein Git-Klon von unofficial-watchfaces sein (mit Stand %s)."
+
+#: wfmix.py:454
+#, python-format
+msgid "▶ Testing %s on the PC (Qt%s) …"
+msgstr "▶ Teste %s am PC (Qt%s) …"
+
+#: wfmix.py:476
+#, python-format
+msgid "■ Test window closed (code %s)"
+msgstr "■ Testfenster geschlossen (Code %s)"
+
+#: wfmix.py:509
+msgid "  Timeout"
+msgstr "  Zeitüberschreitung"
+
+#: wfmix.py:519
+#, python-format
+msgid "  Error (code %d)"
+msgstr "  Fehler (Code %d)"
+
+#: wfmix.py:541
+#, python-format
+msgid "Watchface %s has not been generated yet."
+msgstr "Watchface %s ist noch nicht erzeugt."
+
+#: wfmix.py:543
+#, python-format
+msgid "▶ Copying %s to the watch (%s) …"
+msgstr "▶ Lade %s auf die Uhr (%s) …"
+
+#: wfmix.py:550
+#, python-format
+msgid "Copying failed. Is the watch connected via USB with Developer mode enabled under Settings → USB? Does 'ssh root@%s' work in a terminal?"
+msgstr "Kopieren fehlgeschlagen. Ist die Uhr per USB verbunden und unter Einstellungen → USB der Developer-Modus aktiv? Klappt 'ssh root@%s' im Terminal?"
+
+#: wfmix.py:556
+msgid "  Restarting the watch UI (loads new fonts/images) …"
+msgstr "  Starte die Oberfläche der Uhr neu (neue Schriften/Bilder werden geladen) …"
+
+#: wfmix.py:558
+#, python-format
+msgid "■ Done – %s is on the watch%s."
+msgstr "■ Fertig – %s ist auf der Uhr%s."
+
+#: wfmix.py:559
+msgid " and active"
+msgstr " und aktiv"
+
+#: wfmix.py:569
+#, python-format
+msgid "▶ Removing %s from the watch …"
+msgstr "▶ Entferne %s von der Uhr …"
+
+#: wfmix.py:574
+msgid "■ Removed. Images and fonts stay (other watchfaces may use them)."
+msgstr "■ Entfernt. Bilder und Schriften bleiben liegen (können von anderen Watchfaces genutzt werden)."
+
+#: wfmix.py:579
+msgid "▶ Checking connection to the watch …"
+msgstr "▶ Prüfe Verbindung zur Uhr …"
+
+#: wfmix.py:589
+#, python-format
+msgid "■ The watch uses Qt%s → choose target \"Qt%s\"."
+msgstr "■ Die Uhr nutzt Qt%s → als Ziel „Qt%s“ wählen."
+
+#: wfmix.py:744 wfmix.py:932
+msgid "Watchface not found"
+msgstr "Watchface nicht gefunden"
+
+#: wfmix.py:757
+msgid "Project not found"
+msgstr "Projekt nicht gefunden"
+
+#: wfmix.py:799
+#, python-format
+msgid "▶ Watchface '%s' generated (Qt%s)"
+msgstr "▶ Watchface '%s' erzeugt (Qt%s)"
+
+#: wfmix.py:816 wfmix.py:820 wfmix.py:853 wfmix.py:951 wfmix.py:959
+msgid "not found"
+msgstr "nicht gefunden"
+
+#: wfmix.py:860
+msgid "Opened: "
+msgstr "Geöffnet: "
+
+#: wfmix.py:870
+#, python-format
+msgid "✖ Internal error: %s"
+msgstr "✖ Interner Fehler: %s"
+
+#: wfmix.py:909
+msgid "unofficial-watchfaces not found. Put wfmix into the repo folder or use --repo /path/to/unofficial-watchfaces."
+msgstr "unofficial-watchfaces nicht gefunden. Bitte wfmix in den Repo-Ordner legen oder --repo /pfad/zu/unofficial-watchfaces angeben."
+
+#: wfmix.py:926
+msgid "blocks"
+msgstr "Bausteine"
+
+#: wfmix.py:927
+msgid "  (own)"
+msgstr "  (eigenes)"
+
+#: wfmix.py:936
+msgid "  helper"
+msgstr "  Helfer"
+
+#: wfmix.py:937
+#, python-format
+msgid "Qt%s only"
+msgstr "nur Qt%s"
+
+#: wfmix.py:938
+msgid "needs: "
+msgstr "braucht: "
+
+#: wfmix.py:965
+#, python-format
+msgid "wfmix %s running: %s   (quit with Ctrl+C)"
+msgstr "wfmix %s läuft: %s   (Beenden mit Strg+C)"
+
+#: wfmix.py:967
+#, python-format
+msgid ""
+"Repo: %s (Qt%s)\n"
+"Own watchfaces: %s"
+msgstr ""
+"Repo: %s (Qt%s)\n"
+"Eigene Watchfaces: %s"
+
+#: wfmix.py:969
+#, python-format
+msgid "wfmix %s ready – repo: %s (Qt%s)"
+msgstr "wfmix %s bereit – Repo: %s (Qt%s)"
+
+#: wfmix_core.py:482
+msgid "no root object found"
+msgstr "kein Wurzel-Objekt gefunden"
+
+#: wfmix_core.py:696 wfmix_core.py:705 wfmix_core.py:762
+#, python-format
+msgid "  – removed in %s: %s"
+msgstr "  – entfernt in %s: %s"
+
+#: wfmix_core.py:760
+#, python-format
+msgid "  – %s dropped (target missing)"
+msgstr "  – %s verworfen (Ziel fehlt)"
+
+#: wfmix_core.py:768
+#, python-format
+msgid "  – %s dropped (nothing left to do)"
+msgstr "  – %s verworfen (nichts mehr zu tun)"
+
+#: wfmix_core.py:827
+#, python-format
+msgid "! Import '%s' does not exist on Qt5 – removed"
+msgstr "! Import '%s' gibt es unter Qt5 nicht – entfernt"
+
+#: wfmix_core.py:880
+#, python-format
+msgid "~ %s: MultiEffect shadow converted to DropShadow for Qt5"
+msgstr "~ %s: MultiEffect-Schatten für Qt5 in DropShadow umgewandelt"
+
+#: wfmix_core.py:883
+#, python-format
+msgid "~ %s: MultiEffect does not exist on Qt5 – effect removed"
+msgstr "~ %s: MultiEffect gibt es unter Qt5 nicht – Effekt entfernt"
+
+#: wfmix_core.py:886
+#, python-format
+msgid "~ %s: Qt6 shader (.qsb) does not work on Qt5 – effect removed"
+msgstr "~ %s: Qt6-Shader (.qsb) läuft nicht unter Qt5 – Effekt entfernt"
+
+#: wfmix_core.py:889
+#, python-format
+msgid "~ %s: Qt5 shader (GLSL) does not work on Qt6 – effect removed"
+msgstr "~ %s: Qt5-Shader (GLSL) läuft nicht unter Qt6 – Effekt entfernt"
+
+#: wfmix_core.py:916
+#, python-format
+msgid "~ FontLoader: 'name' is read-only on Qt6 – font name %s inserted directly"
+msgstr "~ FontLoader: 'name' ist unter Qt6 nur lesbar – Schriftname %s direkt eingesetzt"
+
+#: wfmix_core.py:963
+msgid "Please enter a name for the watchface (a-z, 0-9, -)."
+msgstr "Bitte einen Namen für das Watchface angeben (a-z, 0-9, -)."
+
+#: wfmix_core.py:966
+msgid "No building blocks selected yet."
+msgstr "Es sind noch keine Bausteine ausgewählt."
+
+#: wfmix_core.py:973
+#, python-format
+msgid "Watchface '%s' not found"
+msgstr "Watchface '%s' nicht gefunden"
+
+#: wfmix_core.py:990
+#, python-format
+msgid "! Block %s in %s not found – skipped"
+msgstr "! Baustein %s in %s nicht gefunden – übersprungen"
+
+#: wfmix_core.py:993
+#, python-format
+msgid "! Block '%s' (%s) was listed twice – used only once"
+msgstr "! Baustein '%s' (%s) war doppelt – nur einmal übernommen"
+
+#: wfmix_core.py:1011
+#, python-format
+msgid "+ '%s' from %s added automatically (used by '%s')"
+msgstr "+ '%s' aus %s automatisch ergänzt (wird von '%s' benutzt)"
+
+#: wfmix_core.py:1031
+#, python-format
+msgid "+ Helper '%s' from %s added automatically (controls selected blocks)"
+msgstr "+ Helfer '%s' aus %s automatisch ergänzt (steuert gewählte Bausteine)"
+
+#: wfmix_core.py:1141
+#, python-format
+msgid "~ id '%s' from %s renamed to '%s' (name conflict)"
+msgstr "~ id '%s' aus %s heißt jetzt '%s' (Namenskonflikt)"
+
+#: wfmix_core.py:1151
+#, python-format
+msgid "~ Property/function '%s' from %s renamed to '%s' (different definition)"
+msgstr "~ Property/Funktion '%s' aus %s heißt jetzt '%s' (unterschiedliche Definition)"
+
+#: wfmix_core.py:1175
+msgid "// Generated with wfmix from: "
+msgstr "// Erzeugt mit wfmix aus: "
+
+#: wfmix_core.py:1176
+msgid "// Base: "
+msgstr "// Basis: "
+
+#: wfmix_core.py:1176
+msgid "Target: Qt"
+msgstr "Ziel: Qt"
+
+#: wfmix_core.py:1208
+#, python-format
+msgid "function %s (%s)"
+msgstr "Funktion %s (%s)"
+
+#: wfmix_core.py:1248
+msgid "// from "
+msgstr "// aus "
+
+#: wfmix_core.py:1262
+#, python-format
+msgid "! '%s' (%s) only works on Qt%s – on Qt%s this part is missing or causes errors"
+msgstr "! '%s' (%s) läuft nur unter Qt%s – auf Qt%s fehlt dieser Teil oder erzeugt Fehler"
+
+#: wfmix_core.py:1335
+msgid "= written: "
+msgstr "= geschrieben: "
+
+#: wfmix.html:95
+msgid "Watchface construction kit"
+msgstr "Watchface-Baukasten"
+
+#: wfmix.html:100
+msgid "Watch"
+msgstr "Uhr"
+
+#: wfmix.html:101
+msgid "Watch IP (Developer mode)"
+msgstr "IP der Uhr (Developer-Mode)"
+
+#: wfmix.html:103
+msgid "Check connection"
+msgstr "Verbindung prüfen"
+
+#: wfmix.html:103
+msgid "ssh root@IP – query version and Qt of the watch"
+msgstr "ssh root@IP – Version und Qt der Uhr abfragen"
+
+#: wfmix.html:111
+msgid "Search watchface …"
+msgstr "Watchface suchen …"
+
+#: wfmix.html:115
+msgid "All"
+msgstr "Alle"
+
+#: wfmix.html:116
+msgid "Analog"
+msgstr "Analog"
+
+#: wfmix.html:117
+msgid "Digital"
+msgstr "Digital"
+
+#: wfmix.html:118
+msgid "Own"
+msgstr "Eigene"
+
+#: wfmix.html:126
+msgid "Pick a watchface on the left."
+msgstr "Links ein Watchface wählen."
+
+#: wfmix.html:127
+msgid "Building blocks"
+msgstr "Bausteine"
+
+#: wfmix.html:128
+msgid "Click = view code · ＋ = add"
+msgstr "Klick = Code ansehen · ＋ = übernehmen"
+
+#: wfmix.html:134
+msgid "My watchface"
+msgstr "Mein Watchface"
+
+#: wfmix.html:135
+msgid "Load saved project"
+msgstr "Gespeichertes Projekt laden"
+
+#: wfmix.html:136
+msgid "New"
+msgstr "Neu"
+
+#: wfmix.html:136
+msgid "Start over"
+msgstr "Neu beginnen"
+
+#: wfmix.html:139
+msgid "Name"
+msgstr "Name"
+
+#: wfmix.html:140
+msgid "e.g. my-commander"
+msgstr "z.B. mein-commander"
+
+#: wfmix.html:141
+msgid "Base"
+msgstr "Basis"
+
+#: wfmix.html:142
+msgid "Provides root type, base settings and preview image"
+msgstr "Liefert Wurzel-Typ, Grundeinstellungen und Vorschaubild"
+
+#: wfmix.html:143
+msgid "Target"
+msgstr "Ziel"
+
+#: wfmix.html:144
+msgid "Which AsteroidOS version the watchface is generated for"
+msgstr "Für welche AsteroidOS-Version das Watchface erzeugt wird"
+
+#: wfmix.html:149
+msgid "Order = drawing order: further down is drawn on top (unless <code>z</code> is set). Drag to reorder."
+msgstr "Reihenfolge = Zeichenreihenfolge: weiter unten liegt oben (sofern kein <code>z</code> gesetzt ist). Ziehen zum Umsortieren."
+
+#: wfmix.html:152
+msgid "▶ Test on PC"
+msgstr "▶ Am PC testen"
+
+#: wfmix.html:152
+msgid "Generate and open in the test window"
+msgstr "Erzeugen und im Testfenster öffnen"
+
+#: wfmix.html:153
+msgid "Close test window"
+msgstr "Testfenster schließen"
+
+#: wfmix.html:154
+msgid "Generate"
+msgstr "Erzeugen"
+
+#: wfmix.html:154
+msgid "Only generate the files"
+msgstr "Nur Dateien erzeugen"
+
+#: wfmix.html:155
+msgid "⇪ To the watch"
+msgstr "⇪ Auf die Uhr"
+
+#: wfmix.html:155
+msgid "Generate, copy to the watch via SSH and activate"
+msgstr "Erzeugen, per SSH auf die Uhr kopieren und aktivieren"
+
+#: wfmix.html:157
+msgid "Open QML"
+msgstr "QML öffnen"
+
+#: wfmix.html:157
+msgid "Open the generated QML file in an editor"
+msgstr "Erzeugte QML-Datei im Editor öffnen"
+
+#: wfmix.html:158
+msgid "Remove from watch"
+msgstr "Von Uhr löschen"
+
+#: wfmix.html:158
+msgid "Delete the watchface from the watch"
+msgstr "Watchface von der Uhr löschen"
+
+#: wfmix.html:167
+msgid "Code"
+msgstr "Code"
+
+#: wfmix.html:168
+msgid "Result QML"
+msgstr "Ergebnis-QML"
+
+#: wfmix.html:169
+msgid "Log"
+msgstr "Protokoll"
+
+#: wfmix.html:174
+msgid "Clear log"
+msgstr "Protokoll leeren"
+
+#: wfmix.html:221
+msgid "Qt5 – AsteroidOS ≤ 2.1"
+msgstr "Qt5 – AsteroidOS ≤ 2.1"
+
+#: wfmix.html:221
+msgid "Qt6 – AsteroidOS ≥ 2.2"
+msgstr "Qt6 – AsteroidOS ≥ 2.2"
+
+#: wfmix.html:249
+msgid "Repo: Qt{0}"
+msgstr "Repo: Qt{0}"
+
+#: wfmix.html:249
+msgid "Checked-out state of unofficial-watchfaces"
+msgstr "Ausgecheckter Stand von unofficial-watchfaces"
+
+#: wfmix.html:251
+msgid "Test Qt{0}"
+msgstr "Test Qt{0}"
+
+#: wfmix.html:252
+msgid "Testing on the PC with Qt{0} is available"
+msgstr "Test am PC mit Qt{0} möglich"
+
+#: wfmix.html:252
+msgid "Packages for testing with Qt{0} are missing (see instructions)"
+msgstr "Für den Test mit Qt{0} fehlen Pakete (siehe Anleitung)"
+
+#: wfmix.html:256
+msgid "Load project …"
+msgstr "Projekt laden …"
+
+#: wfmix.html:270
+msgid "{0} blocks"
+msgstr "{0} Bausteine"
+
+#: wfmix.html:270
+msgid "own"
+msgstr "eigenes"
+
+#: wfmix.html:292
+msgid "no image"
+msgstr "kein Bild"
+
+#: wfmix.html:296
+msgid "Add all blocks (e.g. to edit a watchface and delete parts)"
+msgstr "Alle Bausteine übernehmen (z.B. um ein Watchface zu bearbeiten und Teile zu löschen)"
+
+#: wfmix.html:296
+msgid "Add all"
+msgstr "Alle übernehmen"
+
+#: wfmix.html:297
+msgid "Use this watchface as base"
+msgstr "Dieses Watchface als Basis verwenden"
+
+#: wfmix.html:297
+msgid "Use as base"
+msgstr "Als Basis"
+
+#: wfmix.html:298
+msgid "Open the original in the test window"
+msgstr "Original im Testfenster öffnen"
+
+#: wfmix.html:298
+msgid "Test original"
+msgstr "Original testen"
+
+#: wfmix.html:299
+msgid "Full code"
+msgstr "Ganzer Code"
+
+#: wfmix.html:303
+msgid "Base: {0}"
+msgstr "Basis: {0}"
+
+#: wfmix.html:305
+msgid " (complete)"
+msgstr " (komplett)"
+
+#: wfmix.html:307
+msgid "{0} root properties"
+msgstr "{0} Wurzel-Properties"
+
+#: wfmix.html:308
+msgid "Handlers: {0}"
+msgstr "Handler: {0}"
+
+#: wfmix.html:311
+msgid "already added – click to remove it"
+msgstr "schon übernommen – Klick entfernt ihn wieder"
+
+#: wfmix.html:311
+msgid "add"
+msgstr "übernehmen"
+
+#: wfmix.html:313
+msgid "{0} lines"
+msgstr "{0} Zeilen"
+
+#: wfmix.html:314
+msgid "Only works on Qt{0}. For the other target wfmix adapts or removes the effect."
+msgstr "Läuft nur unter Qt{0}. Beim anderen Ziel passt wfmix den Effekt an oder entfernt ihn."
+
+#: wfmix.html:314
+msgid "Qt{0} only"
+msgstr "nur Qt{0}"
+
+#: wfmix.html:315
+msgid "Draws nothing, provides data or controls other blocks"
+msgstr "Zeichnet nichts, liefert Daten oder steuert andere Bausteine"
+
+#: wfmix.html:315
+msgid "Helper"
+msgstr "Helfer"
+
+#: wfmix.html:316
+msgid "Added automatically"
+msgstr "Wird automatisch mitgenommen"
+
+#: wfmix.html:316
+msgid "needs: {0}"
+msgstr "braucht: {0}"
+
+#: wfmix.html:317
+msgid "Root properties/functions that come along automatically"
+msgstr "Wurzel-Properties/Funktionen, die automatisch mitkommen"
+
+#: wfmix.html:317
+msgid "uses: {0}"
+msgstr "nutzt: {0}"
+
+#: wfmix.html:319
+msgid "This watchface has no blocks of its own (it is built on a component). It can still be used as base."
+msgstr "Dieses Watchface hat keine eigenen Bausteine (es baut auf einer Komponente auf). Es kann aber als Basis dienen."
+
+#: wfmix.html:320
+msgid "Added automatically when needed: {0}"
+msgstr "Automatisch bei Bedarf: {0}"
+
+#: wfmix.html:331
+msgid "my-"
+msgstr "mein-"
+
+#: wfmix.html:342
+msgid "Add all blocks of {0}?"
+msgstr "Alle Bausteine von {0} hinzufügen?"
+
+#: wfmix.html:354
+msgid "drag"
+msgstr "ziehen"
+
+#: wfmix.html:356
+msgid "edited"
+msgstr "bearbeitet"
+
+#: wfmix.html:360
+msgid "move up (further back)"
+msgstr "nach oben (weiter hinten)"
+
+#: wfmix.html:361
+msgid "move down (further front)"
+msgstr "nach unten (weiter vorne)"
+
+#: wfmix.html:362
+msgid "remove"
+msgstr "entfernen"
+
+#: wfmix.html:364
+msgid "Still empty.<br>Pick a watchface on the left and add blocks with ＋ –<br>or “Add all” and then delete what you don't want with ✕."
+msgstr "Noch leer.<br>Links ein Watchface wählen und Bausteine mit ＋ übernehmen –<br>oder „Alle übernehmen“ und dann Unerwünschtes mit ✕ löschen."
+
+#: wfmix.html:370
+msgid "Discard current watchface? (Already generated files are kept.)"
+msgstr "Aktuelles Watchface verwerfen? (Bereits erzeugte Dateien bleiben erhalten.)"
+
+#: wfmix.html:375
+msgid "Loaded: {0}"
+msgstr "Geladen: {0}"
+
+#: wfmix.html:401
+msgid "Editing: {0}  ({1})"
+msgstr "Bearbeiten: {0}  ({1})"
+
+#: wfmix.html:403
+msgid "Change saved"
+msgstr "Änderung gespeichert"
+
+#: wfmix.html:403
+msgid "Unchanged"
+msgstr "Unverändert"
+
+#: wfmix.html:404
+msgid "Original restored"
+msgstr "Original wiederhergestellt"
+
+#: wfmix.html:428
+msgid "  (view only)"
+msgstr "  (nur ansehen)"
+
+#: wfmix.html:429
+msgid "Apply"
+msgstr "Übernehmen"
+
+#: wfmix.html:429
+msgid "Original"
+msgstr "Original"
+
+#: wfmix.html:440
+msgid "// No blocks selected yet."
+msgstr "// Noch keine Bausteine gewählt."
+
+#: wfmix.html:442
+msgid "Notes from building:"
+msgstr "Hinweise beim Zusammenbau:"
+
+#: wfmix.html:443
+msgid "// Error: "
+msgstr "// Fehler: "
+
+#: wfmix.html:461
+msgid "The watch uses Qt{0} – target set to Qt{0}."
+msgstr "Die Uhr nutzt Qt{0} – Ziel wurde auf Qt{0} gestellt."
+
+#: wfmix.html:466
+msgid "Add some blocks first"
+msgstr "Erst Bausteine übernehmen"
+
+#: wfmix.html:467
+msgid "Please enter a name"
+msgstr "Bitte einen Namen eingeben"
+
+#: wfmix.html:480
+msgid "Generated: {0}"
+msgstr "Erzeugt: {0}"
+
+#: wfmix.html:482
+msgid ""
+"Copy “{0}” to the watch ({1}) and activate it?\n"
+"The watch UI restarts briefly."
+msgstr ""
+"„{0}“ auf die Uhr ({1}) kopieren und aktivieren?\n"
+"Die Oberfläche der Uhr startet dabei kurz neu."
+
+#: wfmix.html:485
+msgid "Delete “{0}” from the watch?"
+msgstr "„{0}“ von der Uhr löschen?"
+
+#: wfmix.html:501
+msgid "Error on start: "
+msgstr "Fehler beim Start: "

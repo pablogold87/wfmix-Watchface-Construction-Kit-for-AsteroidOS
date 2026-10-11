@@ -143,6 +143,24 @@ python3 wfmix/wfmix.py --help                   # all options
 - Qt 6.4 (Ubuntu 24.04) has no `QtQuick.Effects` (`MultiEffect`, Qt ≥ 6.5). Watchfaces using it (e.g. analog-nort) cannot be tested with Qt6 on such a PC; on the watch they work. Testing them with target Qt5 works (shadow is converted).
 - Generated watchfaces contain code and assets from unofficial-watchfaces. Those keep their original licenses (mostly LGPL-2.1-or-later; fonts as listed in the unofficial-watchfaces README).
 
+## Translations
+
+wfmix uses **GNU gettext**. The source language is English; translations are normal `.po` files:
+
+```
+locale/wfmix.pot                    # template with all texts (generated)
+locale/de/LC_MESSAGES/wfmix.po      # German
+```
+
+The same catalog is used for messages from Python (`_("…")`) and for the web UI (`T("…")` and `data-t…` attributes, served as JSON).
+`.po` files are compiled at start into `~/.cache/wfmix/locale` – no `msgfmt` needed. Every language with a `.po` file automatically appears in the language selector.
+
+- **Add a language:** `python3 tools/update_po.py --init fr`, then translate `locale/fr/LC_MESSAGES/wfmix.po` (e.g. with Poedit) and restart wfmix.
+- **After changing texts in the code:** `python3 tools/update_po.py` updates the template and all `.po` files (keeps existing translations, adds new texts, removes unused ones).
+- **Check completeness:** `python3 tools/update_po.py --check`
+
+What was checked: all 162 texts show the same German and English wording as before the switch (Python messages and the complete UI compared with the previous version); the `.mo` files written by wfmix give the same results as files from `msgfmt`; `msgfmt -c` accepts the `.po` files. Not checked: right-to-left languages and plural forms (wfmix has no plural texts yet).
+
 ## Security
 
 wfmix runs a small web server **on your own computer only** (127.0.0.1) and starts local programs

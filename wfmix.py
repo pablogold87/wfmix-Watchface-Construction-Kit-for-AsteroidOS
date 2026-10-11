@@ -48,9 +48,10 @@ from urllib.parse import parse_qs, urlparse
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import wfmix_core as core  # noqa: E402
-from wfmix_core import tr  # noqa: E402
+import wfmix_i18n as i18n  # noqa: E402
+from wfmix_i18n import _  # noqa: E402
 
-VERSION = "2.1"
+VERSION = "2.2"
 
 # Git-Staende von unofficial-watchfaces fuer den Test der jeweils anderen Qt-Version
 QT5_REFS = ("2c605dc",)
@@ -108,13 +109,13 @@ def valid_host(host):
         pass
     if _HOSTNAME.match(host):
         return host
-    raise ValueError(tr("Ungültige Adresse der Uhr: %r", "Invalid watch address: %r") % host)
+    raise ValueError(_("Invalid watch address: %r") % host)
 
 
 def valid_port(port):
     port = int(port)
     if not 1 <= port <= 65535:
-        raise ValueError(tr("Ungültiger Port: %s", "Invalid port: %s") % port)
+        raise ValueError(_("Invalid port: %s") % port)
     return port
 
 
@@ -122,8 +123,7 @@ def valid_face_name(name):
     """Name eines eigenen Watchfaces (wird Ordner-, Datei- und dconf-Name)."""
     name = name or ""
     if not _FACE_NAME.match(name):
-        raise ValueError(tr("Ungültiger Watchface-Name: %r (erlaubt: a-z, 0-9, -)",
-                            "Invalid watchface name: %r (allowed: a-z, 0-9, -)") % name)
+        raise ValueError(_("Invalid watchface name: %r (allowed: a-z, 0-9, -)") % name)
     return name
 
 
@@ -151,7 +151,7 @@ def scp_target(user, host, path):
 def tool(name):
     p = shutil.which(name)
     if not p:
-        raise OSError(tr("Programm '%s' nicht gefunden", "Program '%s' not found") % name)
+        raise OSError(_("Program '%s' not found") % name)
     return p
 
 
@@ -306,7 +306,7 @@ class Runner(object):
     def available(self, qt):
         if not qml_binary(qt):
             return False
-        loader, _ = self.test_env(qt)
+        loader, _fake = self.test_env(qt)
         return bool(loader)
 
     def _imports(self, fake, qt):
@@ -409,16 +409,12 @@ class Runner(object):
     def test(self, face_dir, name, qt="5", wait=False, timeout=None):
         qs = qml_binary(qt)
         if not qs:
-            LOG.add(tr("Für den Test mit Qt%s fehlt das Programm. Installieren mit:\n  %s",
-                       "The program for testing with Qt%s is missing. Install with:\n  %s")
+            LOG.add(_("The program for testing with Qt%s is missing. Install with:\n  %s")
                     % (qt, APT6 if qt == "6" else APT5), "err")
             return None
         loader, fake = self.test_env(qt)
         if not loader:
-            LOG.add(tr("Für den Test mit Qt%s fehlen loader.qml/fake-components. Der Repo-Ordner muss ein "
-                       "Git-Klon von unofficial-watchfaces sein (mit Stand %s).",
-                       "loader.qml/fake-components for testing with Qt%s are missing. The repo folder must be "
-                       "a git clone of unofficial-watchfaces (containing %s).")
+            LOG.add(_("loader.qml/fake-components for testing with Qt%s are missing. The repo folder must be a git clone of unofficial-watchfaces (containing %s).")
                     % (qt, "master" if qt == "6" else "2c605dc"), "err")
             return None
         self.stop()
@@ -455,7 +451,7 @@ class Runner(object):
             cmd = [qs, "-I", imports, "-I", cfgdir, loader]
         else:
             cmd = [qs, name, wall, wall, wfdir, loader, "-I", imports]
-        LOG.add(tr("▶ Teste %s am PC (Qt%s) …", "▶ Testing %s on the PC (Qt%s) …") % (name, qt), "head")
+        LOG.add(_("▶ Testing %s on the PC (Qt%s) …") % (name, qt), "head")
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              cwd=face_dir, env=env, text=True, errors="replace",
                              start_new_session=True)
@@ -477,7 +473,7 @@ class Runner(object):
                     kind = "err"
                 LOG.add("   " + line, kind)
             rc = p.wait()
-            LOG.add(tr("■ Testfenster geschlossen (Code %s)", "■ Test window closed (code %s)") % rc, "head")
+            LOG.add(_("■ Test window closed (code %s)") % rc, "head")
             if self.proc is p:
                 self._cleanup()
 
@@ -510,7 +506,7 @@ def run_cmd(cmd, title=None):
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                            text=True, errors="replace", timeout=180)
     except subprocess.TimeoutExpired:
-        LOG.add(tr("  Zeitüberschreitung", "  Timeout"), "err")
+        LOG.add(_("  Timeout"), "err")
         return False, ""
     except (OSError, ValueError) as e:
         LOG.add("  %s" % e, "err")
@@ -520,7 +516,7 @@ def run_cmd(cmd, title=None):
             continue
         LOG.add("    " + line, "warn" if p.returncode == 0 else "err")
     if p.returncode != 0:
-        LOG.add(tr("  Fehler (Code %d)", "  Error (code %d)") % p.returncode, "err")
+        LOG.add(_("  Error (code %d)") % p.returncode, "err")
     return p.returncode == 0, p.stdout
 
 
@@ -542,29 +538,25 @@ def deploy(cfg, face_dir, name, restart=True, activate=True):
         return False
     share = os.path.join(face_dir or "", "usr", "share")
     if not face_dir or not os.path.isdir(share):
-        LOG.add(tr("Watchface %s ist noch nicht erzeugt.", "Watchface %s has not been generated yet.") % name, "err")
+        LOG.add(_("Watchface %s has not been generated yet.") % name, "err")
         return False
-    LOG.add(tr("▶ Lade %s auf die Uhr (%s) …", "▶ Copying %s to the watch (%s) …") % (name, host), "head")
+    LOG.add(_("▶ Copying %s to the watch (%s) …") % (name, host), "head")
     entries = [os.path.join(share, e) for e in sorted(os.listdir(share))
                if not os.path.islink(os.path.join(share, e))]
     cmd = [tool("scp"), "-r", "-P", str(port)] + _ssh_opts(cfg) + ["--"] + entries + \
         [scp_target("root", host, "/usr/share/")]
-    ok, _ = run_cmd(cmd, "scp -r … root@%s:/usr/share/" % host)
+    ok, _out = run_cmd(cmd, "scp -r … root@%s:/usr/share/" % host)
     if not ok:
-        LOG.add(tr("Kopieren fehlgeschlagen. Ist die Uhr per USB verbunden und unter Einstellungen → USB "
-                   "der Developer-Modus aktiv? Klappt 'ssh root@%s' im Terminal?",
-                   "Copying failed. Is the watch connected via USB with Developer mode enabled under "
-                   "Settings → USB? Does 'ssh root@%s' work in a terminal?") % host, "err")
+        LOG.add(_("Copying failed. Is the watch connected via USB with Developer mode enabled under Settings → USB? Does 'ssh root@%s' work in a terminal?") % host, "err")
         return False
     if activate:
         url = "file:///usr/share/asteroid-launcher/watchfaces/%s.qml" % name
         ssh(cfg, "ceres", "dconf write /desktop/asteroid/watchface %s" % shlex.quote("'%s'" % url))
     if restart:
-        LOG.add(tr("  Starte die Oberfläche der Uhr neu (neue Schriften/Bilder werden geladen) …",
-                   "  Restarting the watch UI (loads new fonts/images) …"))
+        LOG.add(_("  Restarting the watch UI (loads new fonts/images) …"))
         ssh(cfg, "root", "systemctl restart user@1000")
-    LOG.add(tr("■ Fertig – %s ist auf der Uhr%s.", "■ Done – %s is on the watch%s.")
-            % (name, tr(" und aktiv", " and active") if activate else ""), "ok")
+    LOG.add(_("■ Done – %s is on the watch%s.")
+            % (name, _(" and active") if activate else ""), "ok")
     return True
 
 
@@ -574,18 +566,17 @@ def undeploy(cfg, name):
     except ValueError as e:
         LOG.add("✖ %s" % e, "err")
         return False
-    LOG.add(tr("▶ Entferne %s von der Uhr …", "▶ Removing %s from the watch …") % name, "head")
-    ok, _ = ssh(cfg, "root", "rm -f -- %s /usr/share/asteroid-launcher/watchfaces-preview/*/%s"
+    LOG.add(_("▶ Removing %s from the watch …") % name, "head")
+    ok, _out = ssh(cfg, "root", "rm -f -- %s /usr/share/asteroid-launcher/watchfaces-preview/*/%s"
                 % (shlex.quote("/usr/share/asteroid-launcher/watchfaces/%s.qml" % name),
                    shlex.quote(name + ".png")))
     if ok:
-        LOG.add(tr("■ Entfernt. Bilder und Schriften bleiben liegen (können von anderen Watchfaces genutzt werden).",
-                   "■ Removed. Images and fonts stay (other watchfaces may use them)."), "ok")
+        LOG.add(_("■ Removed. Images and fonts stay (other watchfaces may use them)."), "ok")
     return ok
 
 
 def watch_info(cfg):
-    LOG.add(tr("▶ Prüfe Verbindung zur Uhr …", "▶ Checking connection to the watch …"), "head")
+    LOG.add(_("▶ Checking connection to the watch …"), "head")
     try:
         valid_host(cfg["host"])
     except ValueError as e:
@@ -595,8 +586,7 @@ def watch_info(cfg):
     if ok:
         qt = "6" if "libQt6Core" in out else "5" if "libQt5Core" in out else ""
         if qt:
-            LOG.add(tr("■ Die Uhr nutzt Qt%s → als Ziel „Qt%s“ wählen.",
-                       "■ The watch uses Qt%s → choose target \"Qt%s\".") % (qt, qt), "ok")
+            LOG.add(_("■ The watch uses Qt%s → choose target \"Qt%s\".") % (qt, qt), "ok")
             cfg["watch_qt"] = qt
     return ok
 
@@ -740,7 +730,9 @@ def make_handler(repo, cfg, runner, token, port):
                         faces.append(d)
                     return self._send(200, {
                         "version": VERSION, "repo": repo.path, "work": repo.workdir,
-                        "repoQt": repo.qt, "lang": core.LANG,
+                        "repoQt": repo.qt, "lang": i18n.get_language(),
+                        "languages": [{"code": l, "name": i18n.language_name(l)}
+                                      for l in i18n.available_languages()],
                         "host": cfg["host"], "watchQt": cfg.get("watch_qt", ""),
                         "testers": {"5": bool(qml_binary("5")), "6": bool(qml_binary("6"))},
                         "ssh": bool(shutil.which("ssh")), "faces": faces,
@@ -749,7 +741,7 @@ def make_handler(repo, cfg, runner, token, port):
                 if u.path == "/api/face":
                     f = repo.face(q.get("id", ""))
                     if not f:
-                        return self._send(404, {"error": tr("Watchface nicht gefunden", "Watchface not found")})
+                        return self._send(404, {"error": _("Watchface not found")})
                     d = f.to_json(with_blocks=True)
                     d["own"] = getattr(f, "own", False)
                     return self._send(200, d)
@@ -762,7 +754,9 @@ def make_handler(repo, cfg, runner, token, port):
                 if u.path == "/api/project":
                     p = core.load_project(repo, q.get("name", ""))
                     return self._send(200 if p else 404,
-                                      p or {"error": tr("Projekt nicht gefunden", "Project not found")})
+                                      p or {"error": _("Project not found")})
+                if u.path == "/api/i18n":
+                    return self._send(200, i18n.catalog(q.get("lang", "")))
                 if u.path == "/api/log":
                     return self._send(200, LOG.since(int(q.get("since", "0") or 0)))
                 if u.path == "/api/source":
@@ -796,14 +790,13 @@ def make_handler(repo, cfg, runner, token, port):
                 return self._send(400, {"error": "invalid JSON"})
             try:
                 if u.path == "/api/lang":
-                    if data.get("lang") in ("de", "en"):
-                        core.LANG = data["lang"]
-                    return self._send(200, {"lang": core.LANG})
+                    lang = i18n.set_language(str(data.get("lang") or ""))
+                    return self._send(200, {"lang": lang})
                 if u.path in ("/api/build", "/api/preview"):
                     write = u.path == "/api/build"
                     res = core.build(repo, data.get("project") or {}, write=write)
                     if write:
-                        LOG.add(tr("▶ Watchface '%s' erzeugt (Qt%s)", "▶ Watchface '%s' generated (Qt%s)")
+                        LOG.add(_("▶ Watchface '%s' generated (Qt%s)")
                                 % (res["name"], res["target"]), "head")
                         for line in res["log"]:
                             LOG.add("  " + line, "warn" if line.startswith("!") else "info")
@@ -820,11 +813,11 @@ def make_handler(repo, cfg, runner, token, port):
                         # vorhandenes Watchface: nur ueber seine bekannte id, nie ueber freie Pfade
                         f = repo.face(str(data.get("face") or ""))
                         if not f:
-                            return self._send(404, {"error": tr("nicht gefunden", "not found")})
+                            return self._send(404, {"error": _("not found")})
                         d, name = f.dir, f.qml_name
                         qt = own_target(repo, f.folder, f.qt) if getattr(f, "own", False) else repo.qt
                     if not d:
-                        return self._send(404, {"error": tr("nicht gefunden", "not found")})
+                        return self._send(404, {"error": _("not found")})
                     runner.test(d, name, qt)
                     return self._send(200, {"ok": True, "name": name, "qt": qt})
                 if u.path == "/api/stop":
@@ -857,14 +850,14 @@ def make_handler(repo, cfg, runner, token, port):
                 if u.path == "/api/open":
                     d = own_face_dir(repo, str(data.get("name") or ""))
                     if not d:
-                        return self._send(404, {"error": tr("nicht gefunden", "not found")})
+                        return self._send(404, {"error": _("not found")})
                     name = os.path.basename(d)
                     p = os.path.join(d, core.WF_SUBDIR, name + ".qml")
                     if os.path.isfile(p) and inside(repo.workdir, p):
                         opener = shutil.which("xdg-open") or shutil.which("open")
                         if opener:
                             subprocess.Popen([opener, p], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        LOG.add(tr("Geöffnet: ", "Opened: ") + p)
+                        LOG.add(_("Opened: ") + p)
                     return self._send(200, {"ok": True, "path": p})
                 return self._send(404, {"error": "unknown"})
             except (BrokenPipeError, ConnectionResetError):
@@ -874,7 +867,7 @@ def make_handler(repo, cfg, runner, token, port):
                 return self._send(400, {"error": str(e)})
             except Exception as e:  # noqa
                 import traceback
-                LOG.add(tr("✖ Interner Fehler: %s", "✖ Internal error: %s") % e, "err")
+                LOG.add(_("✖ Internal error: %s") % e, "err")
                 traceback.print_exc()
                 return self._send(500, {"error": str(e)})
     return H
@@ -892,14 +885,6 @@ def find_repo(arg):
     return None
 
 
-def default_lang():
-    for k in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
-        v = os.environ.get(k, "")
-        if v:
-            return "de" if v.lower().startswith("de") else "en"
-    return "en"
-
-
 def main():
     global CONSOLE
     ap = argparse.ArgumentParser(description="wfmix – Watchface-Baukasten / watchface construction kit "
@@ -914,17 +899,14 @@ def main():
     ap.add_argument("--ui-port", type=int, default=8777, help="port of the web UI")
     ap.add_argument("--wall", help="background image for the PC test")
     ap.add_argument("--target", choices=("5", "6"), help="Qt version for 'test' (default: from project)")
-    ap.add_argument("--lang", choices=("de", "en"), help="language / Sprache (default: system)")
+    ap.add_argument("--lang", choices=i18n.available_languages(), help="language / Sprache (default: system)")
     ap.add_argument("--no-browser", action="store_true", help="do not open the browser")
     a = ap.parse_args()
 
-    core.LANG = a.lang or default_lang()
+    i18n.set_language(a.lang or i18n.default_language())
     repo_path = find_repo(a.repo)
     if not repo_path:
-        print(tr("unofficial-watchfaces nicht gefunden. Bitte wfmix in den Repo-Ordner legen "
-                 "oder --repo /pfad/zu/unofficial-watchfaces angeben.",
-                 "unofficial-watchfaces not found. Put wfmix into the repo folder "
-                 "or use --repo /path/to/unofficial-watchfaces."))
+        print(_("unofficial-watchfaces not found. Put wfmix into the repo folder or use --repo /path/to/unofficial-watchfaces."))
         sys.exit(1)
     repo = core.Repo(repo_path, a.work)
     os.makedirs(repo.workdir, exist_ok=True)
@@ -941,19 +923,19 @@ def main():
         CONSOLE = True
     if a.command == "list":
         for f in repo.faces():
-            print("%-45s Qt%s %3d %s%s" % (f.fid, f.qt, len(f.blocks), tr("Bausteine", "blocks"),
-                                           tr("  (eigenes)", "  (own)") if getattr(f, "own", False) else ""))
+            print("%-45s Qt%s %3d %s%s" % (f.fid, f.qt, len(f.blocks), _("blocks"),
+                                           _("  (own)") if getattr(f, "own", False) else ""))
         return
     if a.command == "blocks":
         f = repo.face(a.arg or "")
         if not f:
-            sys.exit(tr("Watchface nicht gefunden", "Watchface not found"))
+            sys.exit(_("Watchface not found"))
         for b in f.blocks:
             j = b.to_json(False)
             print("%-28s %-16s %4d%s%s%s" % (b.key, b.type, b.lines,
-                                           tr("  Helfer", "  helper") if b.helper else "",
-                                           ("  " + tr("nur Qt", "Qt") + b.only + tr("", " only")) if b.only else "",
-                                           ("  " + tr("braucht: ", "needs: ") + ", ".join(j["deps"])) if j["deps"] else ""))
+                                           _("  helper") if b.helper else "",
+                                           ("  " + _("Qt%s only") % b.only) if b.only else "",
+                                           ("  " + _("needs: ") + ", ".join(j["deps"])) if j["deps"] else ""))
         return
     if a.command == "build":
         with open(a.arg, encoding="utf-8") as fp:
@@ -966,7 +948,7 @@ def main():
     if a.command == "test":
         d = face_dir_for(repo, a.arg or "")
         if not d:
-            sys.exit(tr("nicht gefunden", "not found"))
+            sys.exit(_("not found"))
         name = os.path.basename(d)
         qt = a.target or own_target(repo, name, repo.qt)
         runner.test(d, name, qt, wait=True)
@@ -974,17 +956,17 @@ def main():
     if a.command == "deploy":
         d = face_dir_for(repo, a.arg or "")
         if not d:
-            sys.exit(tr("nicht gefunden", "not found"))
+            sys.exit(_("not found"))
         sys.exit(0 if deploy(cfg, d, os.path.basename(d)) else 1)
 
     token = secrets.token_urlsafe(32)
     srv = ThreadingHTTPServer(("127.0.0.1", a.ui_port), make_handler(repo, cfg, runner, token, a.ui_port))
     url = "http://127.0.0.1:%d/" % a.ui_port
-    print(tr("wfmix %s läuft: %s   (Beenden mit Strg+C)", "wfmix %s running: %s   (quit with Ctrl+C)")
+    print(_("wfmix %s running: %s   (quit with Ctrl+C)")
           % (VERSION, url))
-    print(tr("Repo: %s (Qt%s)\nEigene Watchfaces: %s", "Repo: %s (Qt%s)\nOwn watchfaces: %s")
+    print(_("Repo: %s (Qt%s)\nOwn watchfaces: %s")
           % (repo_path, repo.qt, repo.workdir))
-    LOG.add(tr("wfmix %s bereit – Repo: %s (Qt%s)", "wfmix %s ready – repo: %s (Qt%s)")
+    LOG.add(_("wfmix %s ready – repo: %s (Qt%s)")
             % (VERSION, repo_path, repo.qt), "head")
     if not a.no_browser:
         threading.Timer(0.6, lambda: webbrowser.open(url)).start()
