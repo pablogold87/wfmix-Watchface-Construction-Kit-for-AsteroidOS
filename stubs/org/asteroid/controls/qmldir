@@ -1,0 +1,4 @@
+module org.asteroid.controls
+Icon 1.0 Icon.qml
+Label 1.0 Label.qml
+singleton Dims 1.0 Dims.qml

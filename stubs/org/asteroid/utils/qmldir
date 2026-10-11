@@ -1,0 +1,4 @@
+module org.asteroid.utils
+singleton DeviceSpecs 1.0 DeviceSpecs.qml
+singleton DeviceInfo 1.0 DeviceInfo.qml
+BluetoothStatus 1.0 BluetoothStatus.qml

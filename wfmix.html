@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wfmix – Watchface-Baukasten</title>
+<style>
+:root{
+  --bg:#0f1216; --panel:#161a20; --panel2:#1c2129; --line:#2a313b; --text:#e6e9ee; --mute:#8b95a3;
+  --acc:#3fc1b0; --acc2:#2a8f83; --warn:#e7b84a; --err:#ef6b6b; --ok:#6fcf7f; --cmd:#8fb4ff;
+  --mono: ui-monospace, "JetBrains Mono", "DejaVu Sans Mono", Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--acc2)}
+button.pri{background:var(--acc2);border-color:var(--acc2);color:#fff}
+button.pri:hover{background:var(--acc)}
+button.ghost{background:transparent}
+button.sm{padding:2px 7px;font-size:12px}
+button:disabled{opacity:.45;cursor:default}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc)}
+header{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
+header h1 span{color:var(--acc)}
+.chip{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:#2f5a37}.chip.bad{color:var(--err);border-color:#5a2f2f}
+.sp{flex:1}
+main{flex:1;display:grid;grid-template-columns:270px minmax(320px,1fr) minmax(330px,1fr);min-height:0}
+section{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+section:last-child{border-right:0}
+.sh{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sh h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--mute);margin:0;font-weight:600}
+.scroll{overflow:auto;flex:1;min-height:0}
+.faces .f{display:flex;gap:10px;align-items:center;padding:6px 12px;cursor:pointer;border-bottom:1px solid #1d222a}
+.faces .f:hover{background:var(--panel)}
+.faces .f.sel{background:var(--panel2);box-shadow:inset 3px 0 0 var(--acc)}
+.faces img,.noimg{width:38px;height:38px;border-radius:50%;background:#000;object-fit:cover;flex:none}
+.noimg{display:grid;place-items:center;color:var(--mute);font-size:11px;border:1px dashed var(--line)}
+.faces .n{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.faces .c{font-size:11px;color:var(--mute)}
+.tabs{display:flex;gap:4px}
+.tabs button{border-radius:99px;padding:2px 10px;font-size:12px}
+.tabs button.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.fhead{display:flex;gap:14px;padding:12px;border-bottom:1px solid var(--line);align-items:center}
+.fhead img,.fhead .noimg{width:96px;height:96px}
+.fhead h3{margin:0 0 6px;font-size:16px;word-break:break-all}
+.fhead .btns{display:flex;gap:6px;flex-wrap:wrap}
+.blk{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid #1d222a;cursor:pointer}
+.blk:hover{background:var(--panel)}
+.blk.sel{background:var(--panel2)}
+.blk .lbl{flex:1;min-width:0}
+.blk .lbl b{font-weight:550;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blk .meta{font-size:11px;color:var(--mute);display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:10.5px;padding:0 6px;border-radius:4px;background:#232a33;color:var(--mute)}
+.tag.h{background:#2c2a1b;color:var(--warn)}
+.tag.d{background:#1b2a2c;color:var(--acc)}
+.tag.e{background:#2a1f2c;color:#d9a3ff}
+.in{color:var(--ok);font-size:12px}
+.add{width:28px;height:28px;padding:0;border-radius:50%;font-size:17px;line-height:1;flex:none}
+.mine .row{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #1d222a;cursor:pointer}
+.mine .row:hover{background:var(--panel)}
+.mine .row.sel{background:var(--panel2)}
+.mine .row.drag{opacity:.4}
+.mine .row.over{box-shadow:inset 0 2px 0 var(--acc)}
+.mine .grip{cursor:grab;color:var(--mute);user-select:none;padding:0 2px}
+.mine .src{font-size:11px;color:var(--mute)}
+.mine .acts{display:flex;gap:3px}
+.form{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
+.form label{color:var(--mute);font-size:12px}
+.actions{padding:10px 12px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px;background:var(--panel)}
+.hint{font-size:12px;color:var(--mute);padding:8px 12px}
+.empty{color:var(--mute);padding:24px 16px;text-align:center;font-size:13px}
+.bottom{height:34vh;min-height:170px;border-top:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel)}
+.bottom .sh{border-bottom:1px solid var(--line)}
+textarea{flex:1;width:100%;resize:none;border:0;background:#0b0d10;color:#d6dde6;font:12.5px/1.45 var(--mono);padding:10px 12px;tab-size:4;white-space:pre}
+#log{flex:1;overflow:auto;background:#0b0d10;font:12px/1.45 var(--mono);padding:8px 12px;white-space:pre-wrap}
+#log .head{color:var(--acc);font-weight:600}
+#log .err{color:var(--err)}#log .warn{color:#b8c0cc}#log .ok{color:var(--ok)}#log .cmd{color:var(--cmd)}#log .info{color:#c6cdd6}
+.badge{background:var(--err);color:#fff;border-radius:99px;font-size:10px;padding:0 6px;margin-left:4px}
+.toast{position:fixed;right:16px;bottom:16px;background:var(--panel2);border:1px solid var(--acc2);padding:8px 14px;border-radius:8px;opacity:0;transition:.2s;pointer-events:none}
+.toast.show{opacity:1}
+.resz{height:5px;cursor:ns-resize;background:transparent;margin-top:-3px}
+@media (max-width: 1000px){ main{grid-template-columns:1fr} section{border-right:0;border-bottom:1px solid var(--line);max-height:60vh} }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>wf</span>mix · Watchface-Baukasten</h1>
+  <span id="chipQml" class="chip">qmlscene …</span>
+  <span class="chip" title="Watchfaces aus dem Repo">Qt5 / AsteroidOS ≤ 2.1</span>
+  <div class="sp"></div>
+  <label class="chip" style="display:flex;gap:6px;align-items:center;border:0">Uhr
+    <input id="host" style="width:130px;padding:2px 6px" title="IP der Uhr (Developer-Mode)">
+  </label>
+  <button class="sm" id="btnInfo" title="ssh root@IP – Version abfragen">Verbindung prüfen</button>
+</header>
+
+<main>
+  <!-- Spalte 1: Watchfaces -->
+  <section>
+    <div class="sh">
+      <input id="q" placeholder="Watchface suchen …" style="flex:1;min-width:0">
+    </div>
+    <div class="sh" style="padding-top:6px;padding-bottom:6px">
+      <div class="tabs" id="ftabs">
+        <button data-f="all" class="on">Alle</button>
+        <button data-f="analog">Analog</button>
+        <button data-f="digital">Digital</button>
+        <button data-f="own">Eigene</button>
+      </div>
+    </div>
+    <div class="scroll faces" id="faces"></div>
+  </section>
+
+  <!-- Spalte 2: Bausteine des gewählten Watchfaces -->
+  <section>
+    <div id="fhead" class="fhead"><div class="empty" style="padding:0">Links ein Watchface wählen.</div></div>
+    <div class="sh"><h2>Bausteine</h2><div class="sp"></div>
+      <span class="hint" style="padding:0">Klick = Code ansehen · ＋ = übernehmen</span></div>
+    <div class="scroll" id="blocks"></div>
+  </section>
+
+  <!-- Spalte 3: Mein Watchface -->
+  <section class="mine">
+    <div class="sh"><h2>Mein Watchface</h2><div class="sp"></div>
+      <select id="projects" title="Gespeichertes Projekt laden"><option value="">Projekt laden …</option></select>
+      <button class="sm ghost" id="btnNew" title="Neu beginnen">Neu</button>
+    </div>
+    <div class="form">
+      <label for="name">Name</label>
+      <input id="name" placeholder="z.B. mein-commander" spellcheck="false">
+      <label for="base">Basis</label>
+      <select id="base" title="Liefert Wurzel-Typ, Grundeinstellungen und Vorschaubild"></select>
+    </div>
+    <div class="hint">Reihenfolge = Zeichenreihenfolge: weiter unten liegt oben (sofern kein <code>z</code> gesetzt ist). Ziehen zum Umsortieren.</div>
+    <div class="scroll" id="mine"></div>
+    <div class="actions">
+      <button class="pri" id="btnTest" title="Erzeugen und im Testfenster öffnen">▶ Am PC testen</button>
+      <button id="btnStop" title="Testfenster schließen">■</button>
+      <button id="btnBuild" title="Nur Dateien erzeugen">Erzeugen</button>
+      <button id="btnDeploy" title="Erzeugen, per SSH auf die Uhr kopieren und aktivieren">⇪ Auf die Uhr</button>
+      <div class="sp"></div>
+      <button class="ghost sm" id="btnOpen" title="Erzeugte QML-Datei im Editor öffnen">QML öffnen</button>
+      <button class="ghost sm" id="btnUndeploy" title="Watchface von der Uhr löschen">Von Uhr löschen</button>
+    </div>
+  </section>
+</main>
+
+<div class="resz" id="resz"></div>
+<div class="bottom" id="bottom">
+  <div class="sh" style="padding:6px 12px">
+    <div class="tabs" id="btabs">
+      <button data-t="code" class="on">Code</button>
+      <button data-t="result">Ergebnis-QML</button>
+      <button data-t="log">Protokoll<span id="errBadge"></span></button>
+    </div>
+    <span id="codeInfo" class="hint" style="padding:0 6px"></span>
+    <div class="sp"></div>
+    <span id="codeBtns" style="display:flex;gap:6px"></span>
+    <button class="sm ghost" id="btnClearLog" style="display:none">Protokoll leeren</button>
+  </div>
+  <textarea id="code" spellcheck="false" readonly></textarea>
+  <div id="log" style="display:none"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem("wfmix." + k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem("wfmix." + k, JSON.stringify(v)); } catch(e){} }
+};
+let S = { faces: [], filter: "all", q: "", face: null, faceCache: {}, sel: null,
+          proj: LS.get("proj", {name: "", base: "", items: []}), mineSel: -1,
+          tab: "code", logN: 0, errs: 0 };
+
+async function api(path, body){
+  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body)});
+  const ct = r.headers.get("Content-Type") || "";
+  const d = ct.includes("json") ? await r.json() : await r.text();
+  if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+  return d;
+}
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2200); }
+function save(){ LS.set("proj", S.proj); }
+
+// ---------------------------------------------------------------- Start
+async function init(){
+  const st = await api("/api/state");
+  S.faces = st.faces;
+  const c = $("#chipQml");
+  c.textContent = st.qmlscene ? "qmlscene ✓" : "qmlscene fehlt";
+  c.className = "chip " + (st.qmlscene ? "ok" : "bad");
+  if (!st.qmlscene) c.title = "Für den PC-Test: sudo apt install qmlscene qml-module-qtquick2 qml-module-qtgraphicaleffects …";
+  $("#host").value = LS.get("host", st.host);
+  const ps = $("#projects");
+  ps.innerHTML = '<option value="">Projekt laden …</option>' + st.projects.map(p => `<option>${esc(p)}</option>`).join("");
+  renderFaces(); renderMine();
+  const last = LS.get("face", null);
+  if (last && S.faces.find(f => f.id === last)) selectFace(last);
+}
+
+// ---------------------------------------------------------------- Watchface-Liste
+function kindOf(f){ return f.id.startsWith("analog") ? "analog" : (f.id.startsWith("digital") || f.id.startsWith("binary")) ? "digital" : "other"; }
+function renderFaces(){
+  const q = S.q.toLowerCase();
+  const list = S.faces.filter(f => (!q || f.id.toLowerCase().includes(q))
+     && (S.filter === "all" || (S.filter === "own" ? f.own : (!f.own && kindOf(f) === S.filter))));
+  $("#faces").innerHTML = list.map(f => `
+    <div class="f ${S.face && S.face.id === f.id ? "sel" : ""}" data-id="${esc(f.id)}">
+      <img loading="lazy" src="/api/thumb?id=${encodeURIComponent(f.id)}" onerror="this.outerHTML='<div class=noimg>?</div>'">
+      <div style="min-width:0"><div class="n">${esc(f.id)}</div>
+      <div class="c">${f.blocks} Bausteine${f.own ? " · eigenes" : ""}${f.rootType !== "Item" ? " · " + esc(f.rootType) : ""}</div></div>
+    </div>`).join("") || '<div class="empty">Nichts gefunden.</div>';
+}
+$("#faces").onclick = e => { const el = e.target.closest(".f"); if (el) selectFace(el.dataset.id); };
+$("#q").oninput = e => { S.q = e.target.value; renderFaces(); };
+$("#ftabs").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  S.filter = b.dataset.f; [...$("#ftabs").children].forEach(x => x.classList.toggle("on", x === b)); renderFaces(); };
+
+async function loadFace(id){
+  if (!S.faceCache[id]) S.faceCache[id] = await api("/api/face?id=" + encodeURIComponent(id));
+  return S.faceCache[id];
+}
+async function selectFace(id){
+  try { S.face = await loadFace(id); } catch(e){ toast(e.message); return; }
+  LS.set("face", id); S.sel = null;
+  renderFaces(); renderFace();
+}
+function inMine(fid, key){ return S.proj.items.some(i => i.face === fid && i.key === key); }
+
+function renderFace(){
+  const f = S.face;
+  $("#fhead").innerHTML = `
+    <img src="/api/thumb?id=${encodeURIComponent(f.id)}" onerror="this.outerHTML='<div class=noimg>kein Bild</div>'">
+    <div style="min-width:0">
+      <h3>${esc(f.id)}</h3>
+      <div class="btns">
+        <button class="sm" id="bAll" title="Alle Bausteine übernehmen (z.B. um ein Watchface zu bearbeiten und Teile zu löschen)">Alle übernehmen</button>
+        <button class="sm" id="bBase" title="Als Basis verwenden">Als Basis</button>
+        <button class="sm ghost" id="bOrig" title="Original im Testfenster öffnen">Original testen</button>
+        <button class="sm ghost" id="bSrc">Ganzer Code</button>
+      </div>
+    </div>`;
+  $("#bAll").onclick = () => { addAll(f); };
+  $("#bBase").onclick = () => { S.proj.base = f.id; save(); renderMine(); toast("Basis: " + f.id); };
+  $("#bOrig").onclick = () => runTest({name: f.qml, origDir: f.folder});
+  $("#bSrc").onclick = async () => { showCode(await api("/api/source?id=" + encodeURIComponent(f.id)), f.id + " (komplett)", null); };
+  const extra = [];
+  if (f.props.length) extra.push(`${f.props.length} Wurzel-Properties`);
+  if (f.handlers.length) extra.push(`Handler: ${f.handlers.map(h => h.name).join(", ")}`);
+  $("#blocks").innerHTML = (f.blockList.map(b => `
+    <div class="blk ${S.sel && S.sel.key === b.key ? "sel" : ""}" data-k="${esc(b.key)}">
+      <button class="add" title="${inMine(f.id, b.key) ? "schon übernommen – nochmal hinzufügen" : "übernehmen"}">${inMine(f.id, b.key) ? "✓" : "＋"}</button>
+      <div class="lbl"><b>${esc(b.label)}</b>
+        <div class="meta"><span class="tag">${esc(b.type)}</span><span>${b.lines} Zeilen</span>
+        ${b.helper ? '<span class="tag h" title="Zeichnet nichts, liefert Daten oder steuert andere Bausteine">Helfer</span>' : ""}
+        ${b.deps.length ? `<span class="tag d" title="Wird automatisch mitgenommen">braucht: ${esc(b.deps.join(", "))}</span>` : ""}
+        ${b.uses.length ? `<span class="tag e" title="Wurzel-Properties/Funktionen, die automatisch mitkommen">nutzt: ${esc(b.uses.join(", "))}</span>` : ""}
+        </div></div>
+    </div>`).join("") || '<div class="empty">Dieses Watchface hat keine eigenen Bausteine (es baut auf einer Komponente auf). Es kann aber als Basis dienen.</div>')
+    + (extra.length ? `<div class="hint">Automatisch bei Bedarf: ${esc(extra.join(" · "))}</div>` : "");
+}
+$("#blocks").onclick = e => {
+  const row = e.target.closest(".blk"); if (!row) return;
+  const b = S.face.blockList.find(x => x.key === row.dataset.k);
+  if (e.target.closest(".add")) { addItem(S.face, b); return; }
+  S.sel = b; renderFace();
+  showCode(b.code, `${S.face.id} › ${b.label}`, null);
+};
+
+// ---------------------------------------------------------------- Mein Watchface
+function addItem(f, b){
+  if (!S.proj.items.length && !S.proj.base) S.proj.base = f.id;
+  if (!S.proj.name) { S.proj.name = "mein-" + f.qml.replace(/^(analog|digital)-/, ""); }
+  S.proj.items.push({face: f.id, key: b.key, label: b.label, type: b.type});
+  save(); renderMine(); renderFace();
+  toast("＋ " + b.label);
+}
+function addAll(f){
+  if (S.proj.items.length && !confirm("Alle Bausteine von " + f.id + " hinzufügen?")) return;
+  if (!S.proj.items.length) { S.proj.base = f.id; if (!S.proj.name) S.proj.name = "mein-" + f.qml.replace(/^(analog|digital)-/, ""); }
+  f.blockList.forEach(b => { if (!inMine(f.id, b.key)) S.proj.items.push({face: f.id, key: b.key, label: b.label, type: b.type}); });
+  save(); renderMine(); renderFace();
+}
+function renderMine(){
+  $("#name").value = S.proj.name || "";
+  const used = [...new Set([S.proj.base, ...S.proj.items.map(i => i.face)].filter(Boolean))];
+  $("#base").innerHTML = used.map(u => `<option ${u === S.proj.base ? "selected" : ""}>${esc(u)}</option>`).join("") || "<option value=''>–</option>";
+  $("#mine").innerHTML = S.proj.items.map((it, i) => `
+    <div class="row ${i === S.mineSel ? "sel" : ""}" draggable="true" data-i="${i}">
+      <span class="grip" title="ziehen">⋮⋮</span>
+      <div style="flex:1;min-width:0">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.label || it.key)} ${it.code ? '<span class="tag e">bearbeitet</span>' : ""}</div>
+        <div class="src">${esc(it.face)} · ${esc(it.type || "")}</div>
+      </div>
+      <div class="acts">
+        <button class="sm ghost" data-a="up" title="nach oben (weiter hinten)">↑</button>
+        <button class="sm ghost" data-a="down" title="nach unten (weiter vorne)">↓</button>
+        <button class="sm ghost" data-a="del" title="entfernen">✕</button>
+      </div>
+    </div>`).join("") || '<div class="empty">Noch leer.<br>Links ein Watchface wählen und Bausteine mit ＋ übernehmen –<br>oder „Alle übernehmen“ und dann Unerwünschtes mit ✕ löschen.</div>';
+}
+$("#name").oninput = e => { S.proj.name = e.target.value; save(); };
+$("#name").onchange = e => { S.proj.name = e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, ""); save(); renderMine(); };
+$("#base").onchange = e => { S.proj.base = e.target.value; save(); };
+$("#btnNew").onclick = () => { if (S.proj.items.length && !confirm("Aktuelles Watchface verwerfen? (Bereits erzeugte Dateien bleiben erhalten.)")) return;
+  S.proj = {name: "", base: "", items: []}; S.mineSel = -1; save(); renderMine(); if (S.face) renderFace(); };
+$("#projects").onchange = async e => {
+  const n = e.target.value; e.target.value = ""; if (!n) return;
+  try { const p = await api("/api/project?name=" + encodeURIComponent(n)); S.proj = p; S.mineSel = -1; save(); renderMine(); if (S.face) renderFace(); toast("Geladen: " + n); }
+  catch(err){ toast(err.message); }
+};
+$("#mine").onclick = async e => {
+  const row = e.target.closest(".row"); if (!row) return;
+  const i = +row.dataset.i, a = e.target.closest("button") && e.target.closest("button").dataset.a;
+  const it = S.proj.items;
+  if (a === "del") { it.splice(i, 1); S.mineSel = -1; }
+  else if (a === "up" && i > 0) { [it[i-1], it[i]] = [it[i], it[i-1]]; S.mineSel = i - 1; }
+  else if (a === "down" && i < it.length - 1) { [it[i+1], it[i]] = [it[i], it[i+1]]; S.mineSel = i + 1; }
+  else if (!a) { S.mineSel = i; await editItem(i); }
+  save(); renderMine(); if (S.face) renderFace();
+};
+// Drag & Drop
+let dragI = -1;
+$("#mine").addEventListener("dragstart", e => { const r = e.target.closest(".row"); if (!r) return; dragI = +r.dataset.i; r.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; });
+$("#mine").addEventListener("dragend", () => { dragI = -1; document.querySelectorAll(".row").forEach(r => r.classList.remove("drag", "over")); });
+$("#mine").addEventListener("dragover", e => { const r = e.target.closest(".row"); if (!r || dragI < 0) return; e.preventDefault();
+  document.querySelectorAll(".row.over").forEach(x => x.classList.remove("over")); r.classList.add("over"); });
+$("#mine").addEventListener("drop", e => { const r = e.target.closest(".row"); if (!r || dragI < 0) return; e.preventDefault();
+  const to = +r.dataset.i; const [m] = S.proj.items.splice(dragI, 1); S.proj.items.splice(to, 0, m); S.mineSel = to; save(); renderMine(); });
+
+async function editItem(i){
+  const it = S.proj.items[i];
+  let f; try { f = await loadFace(it.face); } catch(e){ toast(e.message); return; }
+  const b = f.blockList.find(x => x.key === it.key);
+  const orig = b ? b.code : "";
+  showCode(it.code || orig, `Bearbeiten: ${it.label || it.key}  (${it.face})`, {
+    save(txt){ it.code = (txt.trim() === orig.trim()) ? undefined : txt; if (!it.code) delete it.code; save(); renderMine(); toast(it.code ? "Änderung gespeichert" : "Unverändert"); },
+    reset(){ delete it.code; save(); renderMine(); showCode(orig, `Bearbeiten: ${it.label || it.key}  (${it.face})`, this); toast("Original wiederhergestellt"); }
+  });
+}
+
+// ---------------------------------------------------------------- Unterer Bereich
+function setTab(t){
+  S.tab = t;
+  [...$("#btabs").children].forEach(x => x.classList.toggle("on", x.dataset.t === t));
+  $("#code").style.display = t === "log" ? "none" : "";
+  $("#log").style.display = t === "log" ? "" : "none";
+  $("#btnClearLog").style.display = t === "log" ? "" : "none";
+  $("#codeInfo").style.display = $("#codeBtns").style.display = t === "code" ? "" : "none";
+  if (t === "log") { S.errs = 0; $("#errBadge").innerHTML = ""; const l = $("#log"); l.scrollTop = l.scrollHeight; }
+  if (t === "result") showResult();
+}
+$("#btabs").onclick = e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.t); };
+let codeState = {txt: "", info: "", ed: null};
+function showCode(txt, info, editor){
+  codeState = {txt, info, ed: editor};
+  if (S.tab !== "code") setTab("code");
+  const c = $("#code");
+  c.value = txt; c.readOnly = !editor; c.scrollTop = 0;
+  $("#codeInfo").textContent = info + (editor ? "" : "  (nur ansehen)");
+  $("#codeBtns").innerHTML = editor ? '<button class="sm pri" id="cSave">Übernehmen</button><button class="sm" id="cReset">Original</button>' : "";
+  if (editor) { $("#cSave").onclick = () => editor.save($("#code").value); $("#cReset").onclick = () => editor.reset(); }
+}
+$("#code").addEventListener("keydown", e => {
+  if (e.key === "Tab" && !e.target.readOnly) { e.preventDefault(); const t = e.target, s = t.selectionStart;
+    t.setRangeText("    ", s, t.selectionEnd, "end"); }
+  if ((e.ctrlKey || e.metaKey) && e.key === "s" && codeState.ed) { e.preventDefault(); codeState.ed.save($("#code").value); }
+});
+async function showResult(){
+  const c = $("#code"); c.readOnly = true;
+  if (!S.proj.items.length) { c.value = "// Noch keine Bausteine gewählt."; return; }
+  try { const r = await api("/api/preview", {project: S.proj});
+    c.value = r.qml + (r.log.length ? "\n/* Hinweise beim Zusammenbau:\n" + r.log.map(l => " * " + l).join("\n") + "\n */\n" : ""); }
+  catch(e){ c.value = "// Fehler: " + e.message; }
+}
+
+// Log
+async function pollLog(){
+  try {
+    const lines = await api("/api/log?since=" + S.logN);
+    if (lines.length) {
+      const l = $("#log"); const atEnd = l.scrollHeight - l.scrollTop - l.clientHeight < 40;
+      const frag = document.createDocumentFragment();
+      lines.forEach(x => { const d = document.createElement("div"); d.className = x.k; d.textContent = x.t; frag.appendChild(d);
+        if (x.k === "err") S.errs++; S.logN = x.n; });
+      l.appendChild(frag); if (atEnd) l.scrollTop = l.scrollHeight;
+      if (S.tab !== "log" && S.errs) $("#errBadge").innerHTML = `<span class="badge">${S.errs}</span>`;
+    }
+  } catch(e){}
+  setTimeout(pollLog, 800);
+}
+$("#btnClearLog").onclick = () => { $("#log").innerHTML = ""; };
+
+// ---------------------------------------------------------------- Aktionen
+function needProj(){
+  if (!S.proj.items.length) { toast("Erst Bausteine übernehmen"); return false; }
+  if (!S.proj.name) { toast("Bitte einen Namen eingeben"); $("#name").focus(); return false; }
+  return true;
+}
+async function runTest(opt){
+  setTab("log");
+  try {
+    if (opt && opt.name) await api("/api/test", {name: opt.name, dir: opt.origDir});
+    else { if (!needProj()) return; await api("/api/test", {project: S.proj}); refreshOwn(); }
+  } catch(e){ toast(e.message); }
+}
+$("#btnTest").onclick = () => runTest();
+$("#btnStop").onclick = () => api("/api/stop", {});
+$("#btnBuild").onclick = async () => { if (!needProj()) return; setTab("log");
+  try { const r = await api("/api/build", {project: S.proj}); toast("Erzeugt: " + r.name); refreshOwn(); } catch(e){ toast(e.message); } };
+$("#btnDeploy").onclick = async () => { if (!needProj()) return;
+  if (!confirm(`„${S.proj.name}“ auf die Uhr (${$("#host").value}) kopieren und aktivieren?\nDie Oberfläche der Uhr startet dabei kurz neu.`)) return;
+  setTab("log"); try { await api("/api/deploy", {project: S.proj, host: $("#host").value, restart: true}); } catch(e){ toast(e.message); } };
+$("#btnUndeploy").onclick = async () => { if (!S.proj.name) return;
+  if (!confirm(`„${S.proj.name}“ von der Uhr löschen?`)) return;
+  setTab("log"); await api("/api/undeploy", {name: S.proj.name, host: $("#host").value}); };
+$("#btnOpen").onclick = async () => { if (!S.proj.name) return; const r = await api("/api/open", {name: S.proj.name}); toast(r.path); };
+$("#btnInfo").onclick = async () => { setTab("log"); await api("/api/watchinfo", {host: $("#host").value}); };
+$("#host").onchange = e => LS.set("host", e.target.value.trim());
+async function refreshOwn(){
+  const st = await api("/api/state"); S.faces = st.faces;
+  delete S.faceCache[S.proj.name];
+  $("#projects").innerHTML = '<option value="">Projekt laden …</option>' + st.projects.map(p => `<option>${esc(p)}</option>`).join("");
+  renderFaces();
+}
+
+// Größe des unteren Bereichs
+(() => { const r = $("#resz"), b = $("#bottom"); let y0, h0;
+  const h = LS.get("bottomH", 0); if (h) b.style.height = h + "px";
+  r.onmousedown = e => { y0 = e.clientY; h0 = b.offsetHeight; document.onmousemove = ev => { b.style.height = Math.max(120, h0 - (ev.clientY - y0)) + "px"; };
+    document.onmouseup = () => { document.onmousemove = null; LS.set("bottomH", b.offsetHeight); }; }; })();
+
+init().catch(e => { document.body.innerHTML = "<p style='padding:20px'>Fehler beim Start: " + esc(e.message) + "</p>"; });
+pollLog();
+</script>
+</body>
+</html>
