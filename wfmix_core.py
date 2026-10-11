@@ -958,8 +958,9 @@ def _short(fid):
 
 
 def safe_name(name):
-    name = re.sub(r"[^a-z0-9-]+", "-", name.strip().lower()).strip("-")
-    return name
+    """Watchface-Name: nur a-z, 0-9 und '-', hoechstens 64 Zeichen."""
+    name = re.sub(r"[^a-z0-9-]+", "-", str(name or "").strip().lower()).strip("-")
+    return name[:64].strip("-")
 
 
 def build(repo, project, write=True):

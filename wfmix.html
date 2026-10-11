@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>wfmix</title>
+<meta name="wfmix-token" content="__WFMIX_TOKEN__">
 <style>
 :root{
   --bg:#0f1216; --panel:#161a20; --panel2:#1c2129; --line:#2a313b; --text:#e6e9ee; --mute:#8b95a3;
@@ -270,13 +271,15 @@ let LANG = LS.get("lang", null) || ((navigator.language || "en").toLowerCase().s
 function T(k, ...a){ let s = (I18N[LANG] && I18N[LANG][k]) || I18N.de[k] || k; a.forEach((v, i) => { s = s.split("{" + i + "}").join(v); }); return s; }
 
 const $ = s => document.querySelector(s);
+const TOKEN = (document.querySelector('meta[name="wfmix-token"]') || {}).content || "";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let S = { faces: [], filter: "all", q: "", face: null, faceCache: {}, sel: null,
           proj: LS.get("proj", {name: "", base: "", target: "", items: []}), mineSel: -1,
           tab: "code", logN: 0, errs: 0, st: null };
 
 async function api(path, body){
-  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body)});
+  const r = await fetch(path, body === undefined ? {} : {method: "POST",
+    headers: {"Content-Type": "application/json", "X-Wfmix-Token": TOKEN}, body: JSON.stringify(body)});
   const ct = r.headers.get("Content-Type") || "";
   const d = ct.includes("json") ? await r.json() : await r.text();
   if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
@@ -370,7 +373,7 @@ function renderFace(){
     </div>`;
   $("#bAll").onclick = () => { addAll(f); };
   $("#bBase").onclick = () => { S.proj.base = f.id; save(); renderMine(); toast(T("baseSet", f.id)); };
-  $("#bOrig").onclick = () => runTest({name: f.qml, origDir: f.own ? null : f.folder});
+  $("#bOrig").onclick = () => runTest({face: f.id});
   $("#bSrc").onclick = async () => { showCode(await api("/api/source?id=" + encodeURIComponent(f.id)), f.id + T("fullSuffix"), null); };
   const extra = [];
   if (f.props.length) extra.push(T("rootProps", f.props.length));
@@ -539,7 +542,7 @@ function needProj(){
 async function runTest(opt){
   setTab("log");
   try {
-    if (opt && opt.name) await api("/api/test", {name: opt.name, dir: opt.origDir});
+    if (opt && opt.face) await api("/api/test", {face: opt.face});
     else { if (!needProj()) return; await api("/api/test", {project: S.proj}); refreshOwn(); }
   } catch(e){ toast(e.message); }
 }

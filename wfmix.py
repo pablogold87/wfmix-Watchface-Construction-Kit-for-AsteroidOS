@@ -25,11 +25,15 @@ Kommandozeile / command line:
 
 import argparse
 import collections
+import hmac
 import io
+import ipaddress
 import json
 import mimetypes
 import os
 import re
+import secrets
+import shlex
 import shutil
 import signal
 import subprocess
@@ -46,7 +50,7 @@ sys.path.insert(0, HERE)
 import wfmix_core as core  # noqa: E402
 from wfmix_core import tr  # noqa: E402
 
-VERSION = "2.0"
+VERSION = "2.1"
 
 # Git-Staende von unofficial-watchfaces fuer den Test der jeweils anderen Qt-Version
 QT5_REFS = ("2c605dc",)
@@ -81,6 +85,74 @@ class Log(object):
 
 CONSOLE = False
 LOG = Log()
+
+
+# --------------------------------------------------------------------------
+# Eingaben pruefen - alles, was aus der Oberflaeche oder der Kommandozeile
+# kommt und in einem Dateipfad oder Programmaufruf landet, laeuft hier durch.
+# Validate input - everything from the UI or command line that ends up in a
+# file path or a program call goes through these functions.
+# --------------------------------------------------------------------------
+
+_HOSTNAME = re.compile(r"^(?=.{1,253}$)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+                       r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$")
+_FACE_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$")
+
+
+def valid_host(host):
+    """IP-Adresse oder Hostname der Uhr; nie etwas, das ssh als Option liest."""
+    host = (host or "").strip()
+    try:
+        return str(ipaddress.ip_address(host))
+    except ValueError:
+        pass
+    if _HOSTNAME.match(host):
+        return host
+    raise ValueError(tr("Ungültige Adresse der Uhr: %r", "Invalid watch address: %r") % host)
+
+
+def valid_port(port):
+    port = int(port)
+    if not 1 <= port <= 65535:
+        raise ValueError(tr("Ungültiger Port: %s", "Invalid port: %s") % port)
+    return port
+
+
+def valid_face_name(name):
+    """Name eines eigenen Watchfaces (wird Ordner-, Datei- und dconf-Name)."""
+    name = name or ""
+    if not _FACE_NAME.match(name):
+        raise ValueError(tr("Ungültiger Watchface-Name: %r (erlaubt: a-z, 0-9, -)",
+                            "Invalid watchface name: %r (allowed: a-z, 0-9, -)") % name)
+    return name
+
+
+def inside(base, path):
+    """True, wenn path (aufgeloest) innerhalb von base liegt."""
+    base = os.path.realpath(base)
+    path = os.path.realpath(path)
+    return os.path.commonpath([base, path]) == base
+
+
+def ssh_target(user, host):
+    if user not in ("root", "ceres"):
+        raise ValueError("user")
+    return "%s@%s" % (user, host)   # ssh versteht IPv6 auch ohne Klammern
+
+
+def scp_target(user, host, path):
+    if ":" in host:          # IPv6 braucht bei scp eckige Klammern
+        return "%s@[%s]:%s" % (user, host, path)
+    return "%s@%s:%s" % (user, host, path)
+
+
+# Programme, die wfmix startet (immer als Liste, nie ueber eine Shell)
+# Programs wfmix runs (always as an argument list, never through a shell)
+def tool(name):
+    p = shutil.which(name)
+    if not p:
+        raise OSError(tr("Programm '%s' nicht gefunden", "Program '%s' not found") % name)
+    return p
 
 
 # --------------------------------------------------------------------------
@@ -169,11 +241,26 @@ def qt6_version(binary):
 
 def _git(repo, *args):
     try:
-        p = subprocess.run(["git", "-C", repo] + list(args), stdout=subprocess.PIPE,
+        p = subprocess.run([tool("git"), "-C", repo] + list(args), stdout=subprocess.PIPE,
                            stderr=subprocess.DEVNULL, timeout=60)
         return p.stdout if p.returncode == 0 else None
     except (OSError, subprocess.TimeoutExpired):
         return None
+
+
+def safe_extract(tf, dest):
+    """tar entpacken, nur normale Dateien/Ordner innerhalb von dest."""
+    members = []
+    for m in tf.getmembers():
+        target = os.path.join(dest, m.name)
+        if m.name.startswith(("/", "\\")) or ".." in m.name.replace("\\", "/").split("/") \
+                or not inside(dest, target) or not (m.isfile() or m.isdir()):
+            continue
+        members.append(m)
+    try:
+        tf.extractall(dest, members=members, filter="data")
+    except TypeError:  # Python < 3.12 kennt filter= nicht
+        tf.extractall(dest, members=members)
 
 
 class Runner(object):
@@ -212,10 +299,7 @@ class Runner(object):
                     shutil.rmtree(dest, ignore_errors=True)
                 os.makedirs(dest, exist_ok=True)
                 with tarfile.open(fileobj=io.BytesIO(tar)) as tf:
-                    try:
-                        tf.extractall(dest, filter="data")
-                    except TypeError:  # Python < 3.12
-                        tf.extractall(dest)
+                    safe_extract(tf, dest)
             return os.path.join(dest, "loader.qml"), os.path.join(dest, "fake-components")
         return None, None
 
@@ -414,9 +498,9 @@ class Runner(object):
 # Uhr (SSH, Developer-Mode)
 # --------------------------------------------------------------------------
 
-def _ssh_base(cfg):
+def _ssh_opts(cfg):
     return ["-o", "ConnectTimeout=6", "-o", "BatchMode=yes",
-            "-o", "StrictHostKeyChecking=accept-new", "-p", str(cfg["port"])]
+            "-o", "StrictHostKeyChecking=accept-new"]
 
 
 def run_cmd(cmd, title=None):
@@ -428,7 +512,7 @@ def run_cmd(cmd, title=None):
     except subprocess.TimeoutExpired:
         LOG.add(tr("  Zeitüberschreitung", "  Timeout"), "err")
         return False, ""
-    except OSError as e:
+    except (OSError, ValueError) as e:
         LOG.add("  %s" % e, "err")
         return False, ""
     for line in p.stdout.splitlines():
@@ -441,20 +525,30 @@ def run_cmd(cmd, title=None):
 
 
 def ssh(cfg, user, command):
-    cmd = ["ssh"] + _ssh_base(cfg) + ["%s@%s" % (user, cfg["host"]), command]
-    return run_cmd(cmd, "ssh %s@%s %s" % (user, cfg["host"], command))
+    host = valid_host(cfg["host"])
+    port = valid_port(cfg["port"])
+    # "--" beendet die Optionen: das Ziel kann nie als ssh-Option gelesen werden
+    cmd = [tool("ssh")] + _ssh_opts(cfg) + ["-p", str(port), "--", ssh_target(user, host), command]
+    return run_cmd(cmd, "ssh %s@%s %s" % (user, host, command))
 
 
 def deploy(cfg, face_dir, name, restart=True, activate=True):
-    host = cfg["host"]
+    try:
+        host = valid_host(cfg["host"])
+        port = valid_port(cfg["port"])
+        name = valid_face_name(name)
+    except ValueError as e:
+        LOG.add("✖ %s" % e, "err")
+        return False
     share = os.path.join(face_dir or "", "usr", "share")
     if not face_dir or not os.path.isdir(share):
         LOG.add(tr("Watchface %s ist noch nicht erzeugt.", "Watchface %s has not been generated yet.") % name, "err")
         return False
     LOG.add(tr("▶ Lade %s auf die Uhr (%s) …", "▶ Copying %s to the watch (%s) …") % (name, host), "head")
-    entries = [os.path.join(share, e) for e in sorted(os.listdir(share))]
-    cmd = ["scp", "-r", "-P", str(cfg["port"]), "-o", "ConnectTimeout=6", "-o", "BatchMode=yes",
-           "-o", "StrictHostKeyChecking=accept-new"] + entries + ["root@%s:/usr/share/" % host]
+    entries = [os.path.join(share, e) for e in sorted(os.listdir(share))
+               if not os.path.islink(os.path.join(share, e))]
+    cmd = [tool("scp"), "-r", "-P", str(port)] + _ssh_opts(cfg) + ["--"] + entries + \
+        [scp_target("root", host, "/usr/share/")]
     ok, _ = run_cmd(cmd, "scp -r … root@%s:/usr/share/" % host)
     if not ok:
         LOG.add(tr("Kopieren fehlgeschlagen. Ist die Uhr per USB verbunden und unter Einstellungen → USB "
@@ -463,8 +557,8 @@ def deploy(cfg, face_dir, name, restart=True, activate=True):
                    "Settings → USB? Does 'ssh root@%s' work in a terminal?") % host, "err")
         return False
     if activate:
-        ssh(cfg, "ceres", "dconf write /desktop/asteroid/watchface "
-            "\"'file:///usr/share/asteroid-launcher/watchfaces/%s.qml'\"" % name)
+        url = "file:///usr/share/asteroid-launcher/watchfaces/%s.qml" % name
+        ssh(cfg, "ceres", "dconf write /desktop/asteroid/watchface %s" % shlex.quote("'%s'" % url))
     if restart:
         LOG.add(tr("  Starte die Oberfläche der Uhr neu (neue Schriften/Bilder werden geladen) …",
                    "  Restarting the watch UI (loads new fonts/images) …"))
@@ -475,9 +569,15 @@ def deploy(cfg, face_dir, name, restart=True, activate=True):
 
 
 def undeploy(cfg, name):
+    try:
+        name = valid_face_name(name)
+    except ValueError as e:
+        LOG.add("✖ %s" % e, "err")
+        return False
     LOG.add(tr("▶ Entferne %s von der Uhr …", "▶ Removing %s from the watch …") % name, "head")
-    ok, _ = ssh(cfg, "root", "rm -f /usr/share/asteroid-launcher/watchfaces/%s.qml "
-                "/usr/share/asteroid-launcher/watchfaces-preview/*/%s.png" % (name, name))
+    ok, _ = ssh(cfg, "root", "rm -f -- %s /usr/share/asteroid-launcher/watchfaces-preview/*/%s"
+                % (shlex.quote("/usr/share/asteroid-launcher/watchfaces/%s.qml" % name),
+                   shlex.quote(name + ".png")))
     if ok:
         LOG.add(tr("■ Entfernt. Bilder und Schriften bleiben liegen (können von anderen Watchfaces genutzt werden).",
                    "■ Removed. Images and fonts stay (other watchfaces may use them)."), "ok")
@@ -486,6 +586,11 @@ def undeploy(cfg, name):
 
 def watch_info(cfg):
     LOG.add(tr("▶ Prüfe Verbindung zur Uhr …", "▶ Checking connection to the watch …"), "head")
+    try:
+        valid_host(cfg["host"])
+    except ValueError as e:
+        LOG.add("✖ %s" % e, "err")
+        return False
     ok, out = ssh(cfg, "root", "grep PRETTY_NAME /etc/os-release; ls /usr/lib | grep -m1 -E 'libQt[56]Core'")
     if ok:
         qt = "6" if "libQt6Core" in out else "5" if "libQt5Core" in out else ""
@@ -518,11 +623,28 @@ def own_preview(repo, f):
     return None
 
 
+def own_face_dir(repo, name):
+    """Ordner eines eigenen (erzeugten) Watchfaces im Arbeitsordner oder None."""
+    try:
+        name = valid_face_name(name)
+    except ValueError:
+        return None
+    d = os.path.join(repo.workdir, name)
+    if inside(repo.workdir, d) and os.path.isdir(os.path.join(d, core.WF_SUBDIR)):
+        return d
+    return None
+
+
 def face_dir_for(repo, name):
-    for base in (repo.workdir, repo.path):
-        d = os.path.join(base, name)
-        if os.path.isdir(os.path.join(d, core.WF_SUBDIR)):
-            return d
+    """Fuer die Kommandozeile: eigenes Watchface oder Ordner im Repo."""
+    d = own_face_dir(repo, name)
+    if d:
+        return d
+    if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", name or "") or ".." in name:
+        return None
+    d = os.path.join(repo.path, name)
+    if inside(repo.path, d) and os.path.isdir(os.path.join(d, core.WF_SUBDIR)):
+        return d
     return None
 
 
@@ -531,10 +653,40 @@ def own_target(repo, name, default):
     return str((p or {}).get("target") or default)
 
 
-def make_handler(repo, cfg, runner):
+MAX_BODY = 4 * 1024 * 1024
+
+
+def make_handler(repo, cfg, runner, token, port):
+    """HTTP-Handler der lokalen Oberflaeche.
+
+    Schutz gegen fremde Webseiten im selben Browser:
+    - Host-Header muss 127.0.0.1/localhost:<port> sein (gegen DNS-Rebinding)
+    - POST nur mit JSON, passendem Origin und dem Sitzungs-Token, das nur in
+      der eigenen Seite steht (fremde Seiten koennen es nicht lesen)
+    """
+    hosts = {"127.0.0.1:%d" % port, "localhost:%d" % port}
+    origins = {"http://" + h for h in hosts}
+
     class H(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
+
+        def _host_ok(self):
+            return (self.headers.get("Host") or "") in hosts
+
+        def _post_ok(self):
+            if not self._host_ok():
+                return False
+            origin = self.headers.get("Origin")
+            if origin is not None and origin not in origins:
+                return False
+            site = self.headers.get("Sec-Fetch-Site")
+            if site is not None and site not in ("same-origin", "none"):
+                return False
+            ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip()
+            if ctype != "application/json":
+                return False
+            return hmac.compare_digest(self.headers.get("X-Wfmix-Token") or "", token)
 
         def _send(self, code, body, ctype="application/json; charset=utf-8"):
             if isinstance(body, (dict, list)):
@@ -546,6 +698,14 @@ def make_handler(repo, cfg, runner):
                 self.send_header("Content-Type", ctype)
                 self.send_header("Content-Length", str(len(body)))
                 self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("X-Frame-Options", "DENY")
+                self.send_header("Referrer-Policy", "no-referrer")
+                if ctype.startswith("text/html"):
+                    self.send_header("Content-Security-Policy",
+                                     "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+                                     "script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; "
+                                     "base-uri 'none'; form-action 'none'")
                 self.end_headers()
                 self.wfile.write(body)
             except (BrokenPipeError, ConnectionResetError):
@@ -561,12 +721,15 @@ def make_handler(repo, cfg, runner):
                 self._send(200, fp.read(), ctype)
 
         def do_GET(self):
+            if not self._host_ok():
+                return self._send(403, {"error": "forbidden"})
             u = urlparse(self.path)
             q = {k: v[0] for k, v in parse_qs(u.query).items()}
             try:
                 if u.path == "/":
                     with open(os.path.join(HERE, "wfmix.html"), encoding="utf-8") as fp:
-                        return self._send(200, fp.read(), "text/html; charset=utf-8")
+                        page = fp.read().replace("__WFMIX_TOKEN__", token)
+                    return self._send(200, page, "text/html; charset=utf-8")
                 if u.path == "/api/state":
                     faces = []
                     for f in repo.faces():
@@ -611,10 +774,26 @@ def make_handler(repo, cfg, runner):
             except Exception as e:  # noqa
                 return self._send(500, {"error": str(e)})
 
+        def do_OPTIONS(self):
+            # keine CORS-Freigaben: Anfragen anderer Seiten werden nie erlaubt
+            return self._send(403, {"error": "forbidden"})
+
         def do_POST(self):
             u = urlparse(self.path)
-            n = int(self.headers.get("Content-Length") or 0)
-            data = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
+            if not self._post_ok():
+                return self._send(403, {"error": "forbidden"})
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                n = -1
+            if n < 0 or n > MAX_BODY:
+                return self._send(413, {"error": "too large"})
+            try:
+                data = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._send(400, {"error": "invalid JSON"})
+            if not isinstance(data, dict):
+                return self._send(400, {"error": "invalid JSON"})
             try:
                 if u.path == "/api/lang":
                     if data.get("lang") in ("de", "en"):
@@ -636,11 +815,14 @@ def make_handler(repo, cfg, runner):
                         for line in res["log"]:
                             LOG.add("  " + line, "warn" if line.startswith("!") else "info")
                         name, qt = res["name"], res["target"]
+                        d = own_face_dir(repo, name)
                     else:
-                        name, qt = data.get("name"), repo.qt
-                        if not data.get("dir"):
-                            qt = own_target(repo, name, repo.qt)
-                    d = face_dir_for(repo, data.get("dir") or name)
+                        # vorhandenes Watchface: nur ueber seine bekannte id, nie ueber freie Pfade
+                        f = repo.face(str(data.get("face") or ""))
+                        if not f:
+                            return self._send(404, {"error": tr("nicht gefunden", "not found")})
+                        d, name = f.dir, f.qml_name
+                        qt = own_target(repo, f.folder, f.qt) if getattr(f, "own", False) else repo.qt
                     if not d:
                         return self._send(404, {"error": tr("nicht gefunden", "not found")})
                     runner.test(d, name, qt)
@@ -651,31 +833,34 @@ def make_handler(repo, cfg, runner):
                 if u.path == "/api/deploy":
                     proj = data.get("project")
                     if data.get("host"):
-                        cfg["host"] = data["host"]
+                        cfg["host"] = valid_host(str(data["host"]))
                     if proj:
                         res = core.build(repo, proj, write=True)
                         name = res["name"]
                     else:
-                        name = data.get("name")
-                    d = face_dir_for(repo, name)
-                    threading.Thread(target=deploy, args=(cfg, d, name, data.get("restart", True)),
+                        name = valid_face_name(str(data.get("name") or ""))
+                    d = own_face_dir(repo, name)
+                    threading.Thread(target=deploy, args=(cfg, d, name, bool(data.get("restart", True))),
                                      daemon=True).start()
                     return self._send(200, {"ok": True})
                 if u.path == "/api/undeploy":
                     if data.get("host"):
-                        cfg["host"] = data["host"]
-                    threading.Thread(target=undeploy, args=(cfg, core.safe_name(data.get("name", ""))),
+                        cfg["host"] = valid_host(str(data["host"]))
+                    threading.Thread(target=undeploy, args=(cfg, valid_face_name(str(data.get("name") or ""))),
                                      daemon=True).start()
                     return self._send(200, {"ok": True})
                 if u.path == "/api/watchinfo":
                     if data.get("host"):
-                        cfg["host"] = data["host"]
+                        cfg["host"] = valid_host(str(data["host"]))
                     threading.Thread(target=watch_info, args=(cfg,), daemon=True).start()
                     return self._send(200, {"ok": True})
                 if u.path == "/api/open":
-                    name = core.safe_name(data.get("name", ""))
-                    p = os.path.join(repo.workdir, name, core.WF_SUBDIR, name + ".qml")
-                    if os.path.isfile(p):
+                    d = own_face_dir(repo, str(data.get("name") or ""))
+                    if not d:
+                        return self._send(404, {"error": tr("nicht gefunden", "not found")})
+                    name = os.path.basename(d)
+                    p = os.path.join(d, core.WF_SUBDIR, name + ".qml")
+                    if os.path.isfile(p) and inside(repo.workdir, p):
                         opener = shutil.which("xdg-open") or shutil.which("open")
                         if opener:
                             subprocess.Popen([opener, p], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -743,6 +928,11 @@ def main():
         sys.exit(1)
     repo = core.Repo(repo_path, a.work)
     os.makedirs(repo.workdir, exist_ok=True)
+    try:
+        a.host = valid_host(a.host)
+        a.port = valid_port(a.port)
+    except ValueError as e:
+        sys.exit(str(e))
     cfg = {"repo": repo_path, "host": a.host, "port": a.port,
            "wallpaper": os.path.abspath(a.wall) if a.wall else ""}
     runner = Runner(cfg)
@@ -787,7 +977,8 @@ def main():
             sys.exit(tr("nicht gefunden", "not found"))
         sys.exit(0 if deploy(cfg, d, os.path.basename(d)) else 1)
 
-    srv = ThreadingHTTPServer(("127.0.0.1", a.ui_port), make_handler(repo, cfg, runner))
+    token = secrets.token_urlsafe(32)
+    srv = ThreadingHTTPServer(("127.0.0.1", a.ui_port), make_handler(repo, cfg, runner, token, a.ui_port))
     url = "http://127.0.0.1:%d/" % a.ui_port
     print(tr("wfmix %s läuft: %s   (Beenden mit Strg+C)", "wfmix %s running: %s   (quit with Ctrl+C)")
           % (VERSION, url))

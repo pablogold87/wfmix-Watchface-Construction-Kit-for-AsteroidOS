@@ -143,6 +143,20 @@ python3 wfmix/wfmix.py --help                   # all options
 - Qt 6.4 (Ubuntu 24.04) has no `QtQuick.Effects` (`MultiEffect`, Qt ≥ 6.5). Watchfaces using it (e.g. analog-nort) cannot be tested with Qt6 on such a PC; on the watch they work. Testing them with target Qt5 works (shadow is converted).
 - Generated watchfaces contain code and assets from unofficial-watchfaces. Those keep their original licenses (mostly LGPL-2.1-or-later; fonts as listed in the unofficial-watchfaces README).
 
+## Security
+
+wfmix runs a small web server **on your own computer only** (127.0.0.1) and starts local programs
+(`ssh`, `scp`, `git`, `qmlscene`/`qml`, `xdg-open`). To keep other websites open in your browser from misusing it:
+
+- Every program is started with an argument list, never through a shell.
+- The watch address must be a valid IP address or hostname; `--` ends the options of `ssh`/`scp`, so the address can never be read as an option.
+- Watchface names are limited to `a-z`, `0-9` and `-`; all paths are checked to stay inside the repo or the `mixed/` folder. Existing watchfaces are only addressed by their known id, never by a free path.
+- The server only accepts requests addressed to `127.0.0.1`/`localhost` (protects against DNS rebinding).
+- Every action (POST) needs a random token created at each start, which is only contained in wfmix's own page, plus a matching `Origin` and `Content-Type: application/json`. Other websites cannot read the token.
+- Archives from the git history are only unpacked as regular files inside the cache folder.
+
+What was checked: automated tests for all points above (foreign `Host`/`Origin`, missing/wrong token, cross-site requests from a real browser, ssh option injection, path traversal) and the exact `ssh`/`scp` command lines. Not checked: an external security review.
+
 ## License
 
 wfmix itself is released under the [MIT License](LICENSE).

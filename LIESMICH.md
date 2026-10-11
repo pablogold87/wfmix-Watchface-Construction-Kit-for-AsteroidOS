@@ -143,6 +143,20 @@ python3 wfmix/wfmix.py --help                   # alle Optionen
 - Qt 6.4 (Ubuntu 24.04) hat noch kein `QtQuick.Effects` (`MultiEffect`, ab Qt 6.5). Watchfaces damit (z.B. analog-nort) lassen sich auf so einem PC nicht mit Qt6 testen, auf der Uhr laufen sie. Mit Ziel Qt5 klappt der Test (der Schatten wird umgewandelt).
 - Erzeugte Watchfaces enthalten Code und Dateien aus unofficial-watchfaces. Dafür gelten weiterhin deren Lizenzen (meist LGPL-2.1-or-later; Schriften laut README von unofficial-watchfaces).
 
+## Sicherheit
+
+wfmix startet einen kleinen Webserver **nur auf deinem eigenen Rechner** (127.0.0.1) und ruft lokale Programme auf
+(`ssh`, `scp`, `git`, `qmlscene`/`qml`, `xdg-open`). Damit andere Webseiten, die im Browser offen sind, das nicht ausnutzen können:
+
+- Jedes Programm wird mit einer Argumentliste gestartet, nie über eine Shell.
+- Die Adresse der Uhr muss eine gültige IP-Adresse oder ein Hostname sein; `--` beendet die Optionen von `ssh`/`scp`, die Adresse kann also nie als Option gelesen werden.
+- Watchface-Namen dürfen nur `a-z`, `0-9` und `-` enthalten; alle Pfade werden geprüft, dass sie im Repo bzw. im Ordner `mixed/` bleiben. Vorhandene Watchfaces werden nur über ihre bekannte id angesprochen, nie über freie Pfade.
+- Der Server nimmt nur Anfragen an `127.0.0.1`/`localhost` an (Schutz gegen DNS-Rebinding).
+- Jede Aktion (POST) braucht ein Zufalls-Token, das bei jedem Start neu erzeugt wird und nur in der eigenen Seite von wfmix steht, dazu einen passenden `Origin` und `Content-Type: application/json`. Fremde Webseiten können das Token nicht lesen.
+- Archive aus der Git-Historie werden nur als normale Dateien innerhalb des Cache-Ordners entpackt.
+
+Geprüft: automatische Tests für alle Punkte oben (fremder `Host`/`Origin`, fehlendes/falsches Token, Anfragen fremder Seiten aus einem echten Browser, Einschleusen von ssh-Optionen, Path Traversal) sowie die genauen `ssh`-/`scp`-Befehlszeilen. Nicht geprüft: eine Sicherheitsprüfung durch Dritte.
+
 ## Lizenz
 
 wfmix selbst steht unter der [MIT-Lizenz](LICENSE).
